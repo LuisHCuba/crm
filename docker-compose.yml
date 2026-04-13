@@ -3,51 +3,46 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: lhcx
-      POSTGRES_PASSWORD: lhcx_secret
-      POSTGRES_DB: lhcx
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - internal
 
   api:
-    build:
-      context: ./packages/api
-      dockerfile: Dockerfile
+    image: ghcr.io/luishcuba/lhcx-api:latest
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://lhcx:lhcx_secret@postgres:5432/lhcx
-      JWT_SECRET: ${JWT_SECRET:-trocar-em-producao}
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://app.seudominio.com}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: https://crm.lhcx.tech
       NODE_ENV: production
     networks:
       - internal
-      - traefik
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.lhcx-api.rule=Host(`api.seudominio.com`)"
-      - "traefik.http.routers.lhcx-api.entrypoints=websecure"
-      - "traefik.http.routers.lhcx-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.lhcx-api.loadbalancer.server.port=3000"
 
   web:
-    build:
-      context: ./packages/web
-      dockerfile: Dockerfile
+    image: ghcr.io/luishcuba/lhcx-web:latest
     restart: unless-stopped
     depends_on:
       - api
     networks:
       - internal
-      - traefik
+      - crm
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.lhcx-web.rule=Host(`app.seudominio.com`)"
+      - "traefik.http.routers.lhcx-web.rule=Host(`crm.lhcx.tech`)"
       - "traefik.http.routers.lhcx-web.entrypoints=websecure"
-      - "traefik.http.routers.lhcx-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.lhcx-web.tls.certresolver=leresolver"
       - "traefik.http.services.lhcx-web.loadbalancer.server.port=80"
 
 volumes:
@@ -55,5 +50,5 @@ volumes:
 
 networks:
   internal:
-  traefik:
+  crm:
     external: true

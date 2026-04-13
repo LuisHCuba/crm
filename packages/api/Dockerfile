@@ -11,5 +11,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/src/db/migrations ./src/db/migrations
+COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 EXPOSE 3000
-CMD ["npm", "start"]
+ENTRYPOINT ["./entrypoint.sh"]
