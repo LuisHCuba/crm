@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -69,6 +69,17 @@ export function EmpresaDetailPage() {
   const [activeTab, setActiveTab] = useState("activities");
 
   const userOptions = useUserOptions();
+
+  const searchUsers = useCallback(
+    async (q: string) => {
+      const res = await api.get("/auth/users");
+      const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      return all
+        .filter((u: any) => u.name?.toLowerCase().includes(q.toLowerCase()))
+        .map((u: any) => ({ value: u.id, label: u.name }));
+    },
+    [],
+  );
 
   const { data: empresa, isLoading } = useQuery({
     queryKey: ["empresa", id],
@@ -235,11 +246,11 @@ export function EmpresaDetailPage() {
               onSave={(v) => patchEmpresa.mutate({ address: v || null })}
             />
             <EditableField
-              type="select"
+              type="search"
               label="Responsável"
               value={empresa.responsibleId ?? ""}
               displayValue={responsibleName}
-              options={userOptions}
+              searchFn={searchUsers}
               onSave={(v) => patchEmpresa.mutate({ responsibleId: v || null })}
             />
             <EditableField

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,12 +15,12 @@ import { api, formatMutationError } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { Tabs } from "@/components/ui/Tabs";
 import { AssociationCard } from "@/components/ui/AssociationCard";
 import { EditableField } from "@/components/ui/EditableField";
-import { useCompanyOptions, useUserOptions } from "@/lib/use-options";
+import { AsyncCombobox } from "@/components/ui/AsyncCombobox";
+import { useUserOptions } from "@/lib/use-options";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { AuditHistory } from "@/components/AuditHistory";
 
@@ -83,8 +83,30 @@ export function ContatoDetailPage() {
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [companyIdToLink, setCompanyIdToLink] = useState("");
 
-  const companyOptions = useCompanyOptions();
   const userOptions = useUserOptions();
+
+  const searchUsers = useCallback(
+    async (q: string) => {
+      const res = await api.get("/auth/users");
+      const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      return all
+        .filter((u: any) => u.name?.toLowerCase().includes(q.toLowerCase()))
+        .map((u: any) => ({ value: u.id, label: u.name }));
+    },
+    [],
+  );
+
+  const searchCompanies = useCallback(
+    async (q: string) => {
+      const res = await api.get("/empresas", { params: { search: q, perPage: 20 } });
+      const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      return all.map((c: any) => ({
+        value: c.id,
+        label: c.tradeName?.trim() || c.legalName,
+      }));
+    },
+    [],
+  );
 
   const { data: contato, isLoading } = useQuery({
     queryKey: ["contato", id],
@@ -163,9 +185,6 @@ export function ContatoDetailPage() {
   const stageInfo = STAGE_MAP[contato.stage];
   const responsibleName =
     userOptions.find((u) => u.value === contato.responsibleId)?.label ?? "—";
-  const availableCompanies = companyOptions.filter(
-    (opt) => !(contato.companies ?? []).some((c) => c.id === opt.value),
-  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -233,11 +252,11 @@ export function ContatoDetailPage() {
               onSave={(v) => patchContact.mutate({ origin: v || null })}
             />
             <EditableField
-              type="select"
+              type="search"
               label="Responsável"
               value={contato.responsibleId ?? ""}
               displayValue={responsibleName}
-              options={userOptions}
+              searchFn={searchUsers}
               onSave={(v) => patchContact.mutate({ responsibleId: v || null })}
             />
             <EditableField
@@ -355,11 +374,13 @@ export function ContatoDetailPage() {
           </div>
         }
       >
-        {availableCompanies.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted)]">Todas as empresas já estão vinculadas.</p>
-        ) : (
-          <Select label="Empresa" options={availableCompanies} value={companyIdToLink} onChange={setCompanyIdToLink} placeholder="Selecione…" />
-        )}
+        <AsyncCombobox
+          label="Empresa"
+          placeholder="Buscar empresa…"
+          value={companyIdToLink}
+          onChange={setCompanyIdToLink}
+          searchFn={searchCompanies}
+        />
       </Modal>
     </div>
   );

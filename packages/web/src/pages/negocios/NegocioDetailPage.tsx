@@ -302,9 +302,6 @@ export function NegocioDetailPage() {
     value: p.id,
     label: p.name,
   }));
-  const availableContacts = contactOptions.filter(
-    (opt) => !(deal.contacts ?? []).some((c) => c.id === opt.value),
-  );
   const lossLabel =
     LOSS_OPTIONS.find((o) => o.value === deal.lossReason)?.label ?? deal.lossReason;
 
@@ -380,20 +377,20 @@ export function NegocioDetailPage() {
             />
 
             <EditableField
-              type="select"
+              type="search"
               label="Responsável"
               value={deal.responsibleId}
               displayValue={responsibleName}
-              options={userOptions}
+              searchFn={searchUsers}
               onSave={(v) => patchDeal.mutate({ responsibleId: v })}
             />
 
             <EditableField
-              type="select"
+              type="search"
               label="Empresa"
               value={deal.companyId ?? ""}
               displayValue={companyLabel}
-              options={companyOptions}
+              searchFn={searchCompanies}
               onSave={(v) => patchDeal.mutate({ companyId: v || null })}
             />
 
@@ -685,13 +682,13 @@ export function NegocioDetailPage() {
           </div>
         }
       >
-        {availableContacts.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted)]">
-            {contactOptions.length === 0 ? "Nenhum contato cadastrado." : "Todos já vinculados."}
-          </p>
-        ) : (
-          <Select label="Contato" options={availableContacts} value={contactIdToLink} onChange={setContactIdToLink} placeholder="Selecione…" />
-        )}
+        <AsyncCombobox
+          label="Contato"
+          placeholder="Buscar contato…"
+          value={contactIdToLink}
+          onChange={setContactIdToLink}
+          searchFn={searchContacts}
+        />
       </Modal>
 
       <Modal
