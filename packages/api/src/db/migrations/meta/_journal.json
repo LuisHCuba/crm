@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1776029120417,
+      "tag": "0000_flowery_black_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776029200000,
+      "tag": "0001_deal_company_nullable",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776029300000,
+      "tag": "0002_add_indexes_and_constraints",
+      "breakpoints": true
+    }
+  ]
+}

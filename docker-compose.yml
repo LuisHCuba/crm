@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lhcx
+      POSTGRES_PASSWORD: lhcx_secret
+      POSTGRES_DB: lhcx
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://lhcx:lhcx_secret@postgres:5432/lhcx
+      JWT_SECRET: ${JWT_SECRET:-trocar-em-producao}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://app.seudominio.com}
+      NODE_ENV: production
+    networks:
+      - internal
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lhcx-api.rule=Host(`api.seudominio.com`)"
+      - "traefik.http.routers.lhcx-api.entrypoints=websecure"
+      - "traefik.http.routers.lhcx-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lhcx-api.loadbalancer.server.port=3000"
+
+  web:
+    build:
+      context: ./packages/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - internal
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lhcx-web.rule=Host(`app.seudominio.com`)"
+      - "traefik.http.routers.lhcx-web.entrypoints=websecure"
+      - "traefik.http.routers.lhcx-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lhcx-web.loadbalancer.server.port=80"
+
+volumes:
+  postgres_data:
+
+networks:
+  internal:
+  traefik:
+    external: true

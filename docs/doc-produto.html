@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Documentação do sistema — objetos, campos e fluxo</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --surface: #fff;
+      --border: #d8dde4;
+      --text: #1c1e21;
+      --muted: #65676b;
+      --accent: #1877f2;
+      --green: #0f766e;
+      --font: system-ui, "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.55; font-size: 15px; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem 1.5rem; }
+    header h1 { margin: 0 0 0.35rem; font-size: 1.3rem; }
+    header p { margin: 0; color: var(--muted); max-width: 40rem; }
+    main { max-width: 44rem; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
+    h2 { margin: 2rem 0 0.85rem; font-size: 1.15rem; border-bottom: 2px solid var(--border); padding-bottom: 0.35rem; }
+    h2:first-of-type { margin-top: 0; }
+    p { margin: 0 0 0.75rem; }
+    .muted { color: var(--muted); font-size: 0.92rem; }
+    .obj {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+    .obj-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .obj-header h3 { margin: 0; font-size: 1.05rem; }
+    .obj-header .desc { color: var(--muted); font-size: 0.88rem; }
+    .obj-body { padding: 0.75rem 1rem 1rem; }
+    .obj-body h4 { margin: 0 0 0.35rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    table.fields {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-bottom: 0.85rem;
+    }
+    table.fields th, table.fields td {
+      border: 1px solid #eaecef;
+      padding: 0.4rem 0.55rem;
+      text-align: left;
+    }
+    table.fields th { background: #f8f9fa; font-weight: 600; font-size: 0.78rem; }
+    table.fields td:first-child { font-weight: 500; white-space: nowrap; }
+    .links { font-size: 0.88rem; }
+    .links li { margin-bottom: 0.3rem; }
+    .note {
+      background: #f0fdf4;
+      border-left: 3px solid var(--green);
+      padding: 0.55rem 0.75rem;
+      font-size: 0.88rem;
+      margin: 0.5rem 0 0;
+    }
+    .flow-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+      margin: 1rem 0;
+    }
+    .flow-box h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+    .flow-step {
+      display: flex;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+    }
+    .flow-step:last-child { margin-bottom: 0; }
+    .flow-num {
+      flex-shrink: 0;
+      width: 1.6rem;
+      height: 1.6rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 0.1rem;
+    }
+    .flow-text { font-size: 0.92rem; }
+    .flow-text strong { color: var(--text); }
+    .screens {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+    }
+    @media (max-width: 560px) { .screens { grid-template-columns: 1fr; } }
+    .screen {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.88rem;
+    }
+    .screen h4 { margin: 0 0 0.25rem; font-size: 0.82rem; color: var(--accent); }
+    footer { text-align: center; padding: 1.5rem; color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Documentação do sistema</h1>
+    <p>Cada seção abaixo é um <strong>objeto</strong> (tipo de registro). Dentro: campos, vínculos com outros objetos e telas previstas.</p>
+  </header>
+
+  <main>
+
+    <!-- ===================== REGRAS GERAIS ===================== -->
+    <h2>Regras gerais do sistema</h2>
+
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Busca global</h3>
+        <span class="desc">— campo de pesquisa no topo, presente em todas as telas</span>
+      </div>
+      <div class="obj-body">
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          O usuário digita qualquer termo (ex.: "Padaria") e o sistema retorna resultados agrupados por tipo de objeto: Empresas, Contatos, Negócios, Produtos, Projetos, Tarefas de projeto, Contas a receber, Contas a pagar. Ao clicar em um resultado, abre a ficha do registro.
+        </p>
+      </div>
+    </div>
+
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Exclusão de registros (soft delete)</h3>
+        <span class="desc">— nenhum dado é apagado de verdade</span>
+      </div>
+      <div class="obj-body">
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Quando o usuário "exclui" um registro, ele é <strong>arquivado</strong>: sai das listas e das buscas, mas continua no banco de dados. Regras:
+        </p>
+        <ul class="links">
+          <li>Registros arquivados <strong>não impactam saldos</strong> nem cálculos (ex.: conta a receber arquivada não entra no saldo da conta bancária)</li>
+          <li>Registros arquivados <strong>não aparecem</strong> nas listas padrão nem na busca global</li>
+          <li>Cada lista pode ter um filtro <strong>"Mostrar arquivados"</strong> para visualizar registros excluídos</li>
+          <li>Um registro arquivado pode ser <strong>restaurado</strong> (desarquivado)</li>
+          <li>O histórico de alterações registra tanto o arquivamento quanto a restauração</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Proteção de negócio com contas geradas</h3>
+        <span class="desc">— o que acontece se o vendedor voltar o estágio de "Ganho"</span>
+      </div>
+      <div class="obj-body">
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Se um negócio que já gerou contas a receber for movido de volta para um estágio anterior (ex.: "Ganho" → "Negociação"):
+        </p>
+        <ul class="links">
+          <li>O sistema exibe um <strong>aviso</strong>: "Este negócio já possui X contas a receber vinculadas."</li>
+          <li>As contas <strong>não são apagadas</strong> nem arquivadas automaticamente</li>
+          <li>O sistema abre o <strong>mesmo modal de prévia</strong> listando as contas existentes, permitindo ao usuário <strong>editar</strong> (alterar valor, vencimento, status) ou <strong>cancelar individualmente</strong> cada uma</li>
+          <li>Se o usuário confirmar sem cancelar nenhuma, as contas continuam como estão</li>
+          <li>Se cancelar alguma, o status muda para "Cancelado" (soft delete — não apaga)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <h2>Dashboard (tela inicial)</h2>
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Painel principal</h3>
+        <span class="desc">— primeira coisa que o usuário vê ao abrir o sistema</span>
+      </div>
+      <div class="obj-body">
+        <h4>Widgets</h4>
+        <table class="fields">
+          <tr><th>Widget</th><th>O que mostra</th><th>Ação ao clicar</th></tr>
+          <tr>
+            <td>Funil de negócios</td>
+            <td>Quantidade e valor total por estágio do pipeline ativo</td>
+            <td>Vai para o kanban de Negócios</td>
+          </tr>
+          <tr>
+            <td>Contas a receber vencendo</td>
+            <td>Lista das contas pendentes com vencimento nos próximos 7 dias + total atrasado</td>
+            <td>Vai para a lista de Contas a receber filtrada</td>
+          </tr>
+          <tr>
+            <td>Contas a pagar vencendo</td>
+            <td>Lista das contas pendentes com vencimento nos próximos 7 dias + total atrasado</td>
+            <td>Vai para a lista de Contas a pagar filtrada</td>
+          </tr>
+          <tr>
+            <td>Lembretes pendentes</td>
+            <td>Meus lembretes para hoje + atrasados (contagem e lista curta)</td>
+            <td>Vai para Meus lembretes</td>
+          </tr>
+          <tr>
+            <td>Saldo das contas bancárias</td>
+            <td>Nome de cada conta + saldo atual; total consolidado</td>
+            <td>Vai para a lista de Contas bancárias</td>
+          </tr>
+          <tr>
+            <td>Projetos em andamento</td>
+            <td>Quantidade de projetos ativos + atrasados, com barra de progresso dos 3 mais recentes</td>
+            <td>Vai para a lista de Projetos</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===================== OBJETOS ===================== -->
+    <h2>Objetos do sistema</h2>
+
+    <!-- EMPRESA -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Empresa</h3>
+        <span class="desc">— organização que se relaciona com você (cliente, fornecedor ou ambos)</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Razão social</td><td>texto</td><td>sim</td></tr>
+          <tr><td>Nome fantasia</td><td>texto</td><td>não</td></tr>
+          <tr><td>CNPJ / documento</td><td>texto (único)</td><td>sim</td></tr>
+          <tr><td>Telefone</td><td>telefone</td><td>não</td></tr>
+          <tr><td>E-mail</td><td>e-mail</td><td>não</td></tr>
+          <tr><td>Endereço</td><td>texto longo</td><td>não</td></tr>
+          <tr><td>Tipo</td><td>seleção: Cliente, Fornecedor, Ambos</td><td>sim</td></tr>
+          <tr><td>Responsável</td><td>usuário do sistema</td><td>não</td></tr>
+        </table>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Uma empresa tem <strong>vários Contatos</strong></li>
+          <li>Uma empresa tem <strong>vários Negócios</strong></li>
+          <li>Atividades (lembretes, notas) podem ser vinculadas diretamente à empresa</li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Lista</strong> — tabela paginada com filtro por tipo (cliente/fornecedor), busca por nome ou CNPJ</li>
+          <li><strong>Ficha</strong> — dados da empresa + abas: Contatos, Negócios, Projetos, Financeiro, Atividades, Histórico</li>
+          <li><strong>Aba Projetos</strong> — projetos derivados dos negócios da empresa (caminho: Empresa → Negócio → Projeto); sem campo direto</li>
+          <li><strong>Aba Financeiro</strong> — lista de Contas a receber + Contas a pagar vinculadas a essa empresa, com totais (total pendente a receber, total pendente a pagar, saldo líquido)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CONTATO -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Contato</h3>
+        <span class="desc">— pessoa física; quem você liga, manda e-mail, fala no WhatsApp</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Nome completo</td><td>texto</td><td>sim</td></tr>
+          <tr><td>E-mail</td><td>e-mail (único)</td><td>sim</td></tr>
+          <tr><td>Telefone / WhatsApp</td><td>telefone</td><td>não</td></tr>
+          <tr><td>Cargo</td><td>texto</td><td>não</td></tr>
+          <tr><td>Empresas</td><td>vínculo → Empresa (muitos para muitos)</td><td>não (B2C não tem)</td></tr>
+          <tr><td>Origem</td><td>seleção: Site, Indicação, Evento, Outro</td><td>não</td></tr>
+          <tr><td>Estágio</td><td>seleção: Novo, Qualificado, Cliente ativo, Inativo</td><td>sim</td></tr>
+          <tr><td>Responsável</td><td>usuário do sistema</td><td>não</td></tr>
+        </table>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Um contato pode estar vinculado a <strong>várias Empresas</strong> (ou nenhuma, se B2C)</li>
+          <li>Um contato pode estar em <strong>vários Negócios</strong></li>
+          <li>Atividades (lembretes, notas, ligações) vinculadas ao contato</li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Lista</strong> — tabela com filtro por estágio, empresa, responsável</li>
+          <li><strong>Ficha</strong> — dados + abas: Empresas, Negócios, Atividades, Histórico</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PRODUTO -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Produto</h3>
+        <span class="desc">— o que você vende (serviço, licença, item físico)</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Nome</td><td>texto</td><td>sim</td></tr>
+          <tr><td>SKU / código</td><td>texto (único)</td><td>não</td></tr>
+          <tr><td>Descrição</td><td>texto longo</td><td>não</td></tr>
+          <tr><td>Preço de tabela</td><td>moeda</td><td>sim</td></tr>
+          <tr><td>Unidade</td><td>seleção: un, hr, mês, kg…</td><td>sim</td></tr>
+          <tr><td>Ativo</td><td>sim/não</td><td>sim</td></tr>
+        </table>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Referenciado por <strong>Itens de linha</strong> dentro de Negócios</li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Lista</strong> — catálogo filtrável por nome, ativo/inativo</li>
+          <li><strong>Ficha</strong> — detalhes + lista de Negócios que usam esse produto + Histórico</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Pipeline</h3>
+        <span class="desc">— cadastro de funis personalizáveis; crie quantos precisar</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Nome</td><td>texto (ex.: "Vendas B2B", "Pós-venda", "Parcerias")</td><td>sim</td></tr>
+          <tr><td>Ativo</td><td>sim/não</td><td>sim</td></tr>
+        </table>
+        <h4>Etapas (dentro do Pipeline)</h4>
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">Cada pipeline tem uma <strong>lista ordenada de etapas</strong>. O usuário cria, renomeia, reordena e remove etapas livremente.</p>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th></tr>
+          <tr><td>Nome da etapa</td><td>texto</td></tr>
+          <tr><td>Ordem</td><td>número (posição no funil)</td></tr>
+          <tr><td>Tipo</td><td>seleção: Aberto, Ganho, Perdido</td></tr>
+        </table>
+        <div class="note">
+          <strong>Pipeline padrão (criado automaticamente):</strong> "Vendas" com etapas: Novo → Qualificado → Proposta enviada → Negociação → Ganho → Perdido. As duas últimas marcadas como tipo Ganho e Perdido respectivamente.
+        </div>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Configurações → Pipelines</strong> — lista de pipelines; ao abrir, edita etapas com drag-and-drop para reordenar</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- NEGÓCIO -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Negócio</h3>
+        <span class="desc">— uma venda em andamento (oportunidade), do primeiro interesse até o fechamento</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Título</td><td>texto</td><td>sim</td></tr>
+          <tr><td>Empresa</td><td>vínculo → Empresa</td><td>sim</td></tr>
+          <tr><td>Contatos</td><td>vínculo → Contato (muitos para muitos)</td><td>não</td></tr>
+          <tr><td>Valor total</td><td>moeda (soma dos itens)</td><td>automático</td></tr>
+          <tr><td>Pipeline</td><td>vínculo → Pipeline</td><td>sim</td></tr>
+          <tr><td>Estágio</td><td>vínculo → Etapa do pipeline selecionado</td><td>sim</td></tr>
+          <tr><td>Data de previsão</td><td>data</td><td>não</td></tr>
+          <tr><td>Responsável</td><td>usuário do sistema</td><td>sim</td></tr>
+          <tr><td>Motivo de perda</td><td>seleção (só quando perdido)</td><td>condicional</td></tr>
+        </table>
+        <h4>Itens de linha (dentro do Negócio)</h4>
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">Cada Negócio tem uma <strong>lista de itens</strong>. Cada item é uma linha com:</p>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th></tr>
+          <tr><td>Produto</td><td>vínculo → Produto</td></tr>
+          <tr><td>Quantidade</td><td>número</td></tr>
+          <tr><td>Preço unitário</td><td>moeda (pré-preenche do catálogo, editável)</td></tr>
+          <tr><td>Desconto</td><td>percentual</td></tr>
+          <tr><td>Subtotal</td><td>moeda (calculado)</td></tr>
+        </table>
+        <div class="note">
+          <strong>O valor total do Negócio</strong> é a soma dos subtotais dos itens de linha. Se não tiver nenhum item, pode ser digitado manualmente.
+        </div>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Pertence a uma <strong>Empresa</strong></li>
+          <li>Tem um ou mais <strong>Contatos</strong></li>
+          <li>Tem <strong>Itens de linha</strong> (produto, qtd, preço)</li>
+          <li>Pode ter <strong>Atividades</strong> (lembretes, notas)</li>
+          <li>Pode ter <strong>Projetos</strong> vinculados (quando o negócio gera um projeto)</li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Kanban</strong> — cards organizados por estágio do pipeline (visão principal); cada coluna exibe <strong>quantidade de cards</strong> e <strong>valor total da etapa</strong>; drag-and-drop para mover negócios entre estágios</li>
+          <li><strong>Tabela</strong> — mesmos negócios em formato lista/planilha</li>
+          <li><strong>Ficha</strong> — detalhes + itens de linha + atividades + empresa + contatos vinculados + Projetos vinculados + Histórico</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Histórico de alterações</h3>
+        <span class="desc">— log automático em todos os objetos do sistema, sem exceção</span>
+      </div>
+      <div class="obj-body">
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Toda vez que <strong>qualquer registro</strong> é criado, editado ou excluído, o sistema grava automaticamente uma entrada no histórico. Ninguém edita ou apaga o histórico.
+        </p>
+        <h4>Campos de cada entrada</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th></tr>
+          <tr><td>Data/hora</td><td>timestamp automático</td></tr>
+          <tr><td>Usuário</td><td>quem fez a ação</td></tr>
+          <tr><td>Objeto</td><td>tipo do registro (Empresa, Negócio, Conta a receber…)</td></tr>
+          <tr><td>Registro</td><td>identificador do registro afetado</td></tr>
+          <tr><td>Ação</td><td>Criação, Edição, Exclusão, Mudança de estágio</td></tr>
+          <tr><td>Campo alterado</td><td>qual campo mudou (na edição)</td></tr>
+          <tr><td>Valor anterior</td><td>o que estava antes</td></tr>
+          <tr><td>Valor novo</td><td>o que ficou depois</td></tr>
+        </table>
+        <h4>Onde aparece</h4>
+        <ul class="links">
+          <li>Dentro da <strong>ficha de qualquer registro</strong>: aba "Histórico" mostrando todas as alterações daquele registro em ordem cronológica</li>
+          <li>Tela global <strong>Configurações → Log de atividades</strong>: histórico geral com filtros por usuário, objeto, período e tipo de ação</li>
+        </ul>
+        <h4>Exemplos do que fica registrado</h4>
+        <table class="fields">
+          <tr><th>Quando</th><th>O que aparece no log</th></tr>
+          <tr><td>Vendedor move negócio de "Proposta" para "Ganho"</td><td><em>João — 12/04/2026 14:32 — Negócio "Licença Padaria" — Estágio: Proposta enviada → Ganho</em></td></tr>
+          <tr><td>Financeiro cancela conta a receber</td><td><em>Maria — 12/04/2026 15:10 — Conta a receber #142 — Status: Pendente → Cancelado</em></td></tr>
+          <tr><td>Alguém edita o CNPJ de uma empresa</td><td><em>Pedro — 12/04/2026 09:05 — Empresa "Acme" — CNPJ: 12.345.678/0001-90 → 98.765.432/0001-10</em></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ATIVIDADES -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Atividades</h3>
+        <span class="desc">— registros de ações vinculados a qualquer objeto acima</span>
+      </div>
+      <div class="obj-body">
+        <p style="font-size: 0.88rem; margin-bottom: 0.75rem;">
+          Não é um objeto único — são <strong>tipos de registro pequenos</strong> que aparecem na timeline de qualquer ficha (Empresa, Contato, Negócio):
+        </p>
+        <table class="fields">
+          <tr><th>Tipo</th><th>Campos principais</th></tr>
+          <tr><td>Lembrete</td><td>Título, data de vencimento, responsável, status (pendente/concluído)</td></tr>
+          <tr><td>Nota</td><td>Texto livre + data</td></tr>
+          <tr><td>Ligação</td><td>Duração, resultado (atendeu, não atendeu, recado), anotação</td></tr>
+          <tr><td>Reunião</td><td>Data/hora, participantes, pauta, anotação</td></tr>
+          <tr><td>E-mail</td><td>Assunto, corpo (ou referência ao e-mail enviado/recebido)</td></tr>
+        </table>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li>Aparecem como <strong>timeline</strong> dentro da ficha de qualquer objeto</li>
+          <li><strong>Lembretes</strong> também têm tela própria: lista "meus lembretes pendentes" com filtro por data e responsável</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===================== PROJETOS ===================== -->
+    <h2 style="margin-top: 2.5rem; border-color: var(--accent);">Módulo de Projetos</h2>
+
+    <!-- ETAPAS DE PROJETO -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Etapas de projeto</h3>
+        <span class="desc">— personalizáveis por projeto; cada etapa pertence a um grupo macro fixo</span>
+      </div>
+      <div class="obj-body">
+        <h4>Grupos macro (fixos do sistema, não editáveis)</h4>
+        <table class="fields">
+          <tr><th>Grupo</th><th>Significado</th></tr>
+          <tr><td>Não iniciado</td><td>Nenhum trabalho começou</td></tr>
+          <tr><td>Em andamento</td><td>Trabalho em progresso</td></tr>
+          <tr><td>Concluído</td><td>Entregue / finalizado</td></tr>
+          <tr><td>Pausado</td><td>Parado temporariamente</td></tr>
+          <tr><td>Cancelado</td><td>Descartado</td></tr>
+        </table>
+        <h4>Campos de cada etapa</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Nome</td><td>texto (ex.: "Briefing", "Desenvolvimento", "Go-live")</td><td>sim</td></tr>
+          <tr><td>Percentual</td><td>número (ex.: 10%, 40%, 100%)</td><td>sim</td></tr>
+          <tr><td>Grupo macro</td><td>seleção: Não iniciado, Em andamento, Concluído, Pausado, Cancelado</td><td>sim</td></tr>
+          <tr><td>Ordem</td><td>número (posição na lista)</td><td>sim</td></tr>
+        </table>
+        <div class="note">
+          Cada projeto define suas próprias etapas. Exemplo: Backlog (0%, Não iniciado) → Briefing (10%, Em andamento) → Desenvolvimento (40%, Em andamento) → Homologação (80%, Em andamento) → Go-live (100%, Concluído). Na visão global, o sistema agrupa por grupo macro para padronizar filtros e relatórios.
+        </div>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li>Editadas dentro da <strong>ficha do projeto</strong> (aba de configuração ou seção no cabeçalho)</li>
+          <li>No <strong>kanban do projeto</strong>, as etapas viram as colunas</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PROJETO -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Projeto</h3>
+        <span class="desc">— esteira de execução; pode nascer de um Negócio ganho ou ser criado independente</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Título</td><td>texto</td><td>sim</td></tr>
+          <tr><td>Descrição</td><td>texto longo</td><td>não</td></tr>
+          <tr><td>Negócio de origem</td><td>vínculo → Negócio (opcional)</td><td>não</td></tr>
+          <tr><td>Responsáveis</td><td>vínculo → Usuários (muitos para muitos)</td><td>sim</td></tr>
+          <tr><td>Data início prevista</td><td>data</td><td>sim</td></tr>
+          <tr><td>Data término prevista</td><td>data</td><td>sim</td></tr>
+          <tr><td>Data início real</td><td>data</td><td>não (preenchida quando começa)</td></tr>
+          <tr><td>Data término real</td><td>data</td><td>não (preenchida quando conclui)</td></tr>
+          <tr><td>Progresso</td><td>percentual (calculado: média dos progressos das tarefas)</td><td>automático</td></tr>
+          <tr><td>Etapas</td><td>lista personalizável de etapas (nome + % + grupo macro)</td><td>sim</td></tr>
+        </table>
+        <h4>Status do projeto (automático)</h4>
+        <table class="fields">
+          <tr><th>Status</th><th>Condição</th></tr>
+          <tr><td>Não iniciado</td><td>Nenhuma tarefa saiu de "Não iniciado" e data início real vazia</td></tr>
+          <tr><td>Em andamento</td><td>Pelo menos uma tarefa em andamento e progresso < 100%</td></tr>
+          <tr><td>Concluído</td><td>Progresso = 100%</td></tr>
+          <tr><td>Atrasado</td><td>Data término prevista passou e progresso < 100%</td></tr>
+          <tr><td>Pausado</td><td>Marcação manual (única exceção)</td></tr>
+        </table>
+        <h4>Cálculo de progresso</h4>
+        <div class="note">
+          <strong>Subtarefa:</strong> progresso = percentual da etapa atual.<br>
+          <strong>Tarefa sem subtarefas:</strong> progresso = percentual da etapa atual.<br>
+          <strong>Tarefa com subtarefas:</strong> progresso = média dos progressos das subtarefas.<br>
+          <strong>Projeto:</strong> progresso = média dos progressos de todas as tarefas.
+        </div>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Vinculado ao <strong>Negócio</strong> de origem (opcional)</li>
+          <li><strong>Empresa (via Negócio):</strong> na ficha da empresa, projetos aparecem derivados do caminho Empresa → Negócio → Projeto (sem campo direto)</li>
+          <li>Pode ter <strong>Atividades</strong> (lembretes, notas)</li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Lista de projetos</strong> — tabela com todos os projetos, barra de progresso, filtro por grupo macro e responsáveis</li>
+          <li><strong>Ficha do projeto</strong> — cabeçalho (título, datas previstas/reais, progresso, responsáveis, negócio vinculado) + abas: Kanban, Lista, Timeline, Atividades, Histórico</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- TAREFA DE PROJETO -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Tarefa de projeto</h3>
+        <span class="desc">— item de trabalho dentro de um projeto; percorre as etapas do projeto</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Título</td><td>texto</td><td>sim</td></tr>
+          <tr><td>Descrição</td><td>texto longo</td><td>não</td></tr>
+          <tr><td>Projeto</td><td>vínculo → Projeto</td><td>sim</td></tr>
+          <tr><td>Responsável</td><td>vínculo → Usuário</td><td>não</td></tr>
+          <tr><td>Etapa atual</td><td>vínculo → Etapa do projeto (define o progresso)</td><td>sim</td></tr>
+          <tr><td>Prioridade</td><td>seleção: Baixa, Média, Alta</td><td>não</td></tr>
+          <tr><td>Data início prevista</td><td>data</td><td>não</td></tr>
+          <tr><td>Data término prevista</td><td>data</td><td>não</td></tr>
+          <tr><td>Data início real</td><td>data</td><td>não</td></tr>
+          <tr><td>Data término real</td><td>data</td><td>não</td></tr>
+          <tr><td>Dependência</td><td>vínculo → outra Tarefa do mesmo projeto (opcional)</td><td>não</td></tr>
+        </table>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Pertence a um <strong>Projeto</strong></li>
+          <li>Pode ter <strong>Subtarefas</strong></li>
+          <li>Pode depender de outra <strong>Tarefa</strong> (dependência opcional)</li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li>Aparece como <strong>card no kanban</strong> (coluna = etapa atual)</li>
+          <li>Aparece como <strong>linha na lista</strong> (expandível para ver subtarefas)</li>
+          <li>Aparece como <strong>barra na timeline</strong> (início → término previsto)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SUBTAREFA -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Subtarefa</h3>
+        <span class="desc">— item menor dentro de uma tarefa; também percorre as etapas do projeto</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Título</td><td>texto</td><td>sim</td></tr>
+          <tr><td>Tarefa</td><td>vínculo → Tarefa de projeto</td><td>sim</td></tr>
+          <tr><td>Responsável</td><td>vínculo → Usuário (herda da tarefa se vazio)</td><td>não</td></tr>
+          <tr><td>Etapa atual</td><td>vínculo → Etapa do projeto (mesma lista de etapas)</td><td>sim</td></tr>
+        </table>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Pertence a uma <strong>Tarefa de projeto</strong></li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li>Aparece como <strong>checklist dentro da tarefa</strong> (na lista e na ficha da tarefa)</li>
+          <li>Cada subtarefa mostra sua <strong>etapa atual</strong> e pode ser movida entre etapas</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===================== FINANCEIRO ===================== -->
+    <h2 style="margin-top: 2.5rem; border-color: var(--green);">Módulo Financeiro</h2>
+
+    <!-- CATEGORIA FINANCEIRA -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Categoria financeira</h3>
+        <span class="desc">— classificação de receitas e despesas; cadastro livre</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Nome</td><td>texto (ex.: "Venda de software", "Aluguel", "Marketing")</td><td>sim</td></tr>
+          <tr><td>Tipo</td><td>seleção: Receita, Despesa</td><td>sim</td></tr>
+          <tr><td>Ativa</td><td>sim/não</td><td>sim</td></tr>
+        </table>
+        <div class="note">
+          Na Conta a receber, só aparecem categorias do tipo <strong>Receita</strong>. Na Conta a pagar, só aparecem categorias do tipo <strong>Despesa</strong>.
+        </div>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Configurações → Categorias financeiras</strong> — lista simples com criação, edição e desativação</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CONTA BANCÁRIA -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Conta bancária</h3>
+        <span class="desc">— onde o dinheiro está (banco, carteira digital, caixa)</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Nome</td><td>texto (ex.: "Itaú PJ", "Caixa interno")</td><td>sim</td></tr>
+          <tr><td>Banco</td><td>texto</td><td>não</td></tr>
+          <tr><td>Agência / Conta</td><td>texto</td><td>não</td></tr>
+          <tr><td>Saldo inicial</td><td>moeda</td><td>sim</td></tr>
+          <tr><td>Saldo atual</td><td>moeda (calculado: saldo inicial + entradas − saídas)</td><td>automático</td></tr>
+          <tr><td>Ativa</td><td>sim/não</td><td>sim</td></tr>
+        </table>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Lista</strong> — todas as contas com saldo atual de cada uma</li>
+          <li><strong>Ficha</strong> — dados da conta + extrato (lista de lançamentos vinculados)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CONTA A RECEBER -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Conta a receber</h3>
+        <span class="desc">— dinheiro que alguém te deve</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Descrição</td><td>texto</td><td>sim</td></tr>
+          <tr><td>Empresa (cliente)</td><td>vínculo → Empresa</td><td>sim</td></tr>
+          <tr><td>Negócio de origem</td><td>vínculo → Negócio</td><td>automático (quando gerado do CRM)</td></tr>
+          <tr><td>Produto</td><td>vínculo → Produto (copiado do item de linha)</td><td>não (obrigatório quando gerado do CRM; opcional na criação manual)</td></tr>
+          <tr><td>Grupo de parcelas</td><td>identificador (agrupa parcelas da mesma origem)</td><td>automático</td></tr>
+          <tr><td>Parcela</td><td>texto (ex.: "2/3")</td><td>automático</td></tr>
+          <tr><td>Valor</td><td>moeda</td><td>sim</td></tr>
+          <tr><td>Vencimento</td><td>data</td><td>sim</td></tr>
+          <tr><td>Status</td><td>seleção: Pendente, Pago, Atrasado, Cancelado</td><td>sim</td></tr>
+          <tr><td>Data de pagamento</td><td>data (preenchido ao receber)</td><td>não</td></tr>
+          <tr><td>Valor recebido</td><td>moeda (pode diferir do original — desconto, juros)</td><td>não</td></tr>
+          <tr><td>Conta bancária</td><td>vínculo → Conta bancária (onde entrou)</td><td>ao receber</td></tr>
+          <tr><td>Categoria</td><td>vínculo → Categoria financeira</td><td>não</td></tr>
+        </table>
+        <h4>Criação manual</h4>
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Além da geração automática pelo popup do negócio ganho, contas a receber podem ser criadas <strong>manualmente</strong> (ex.: venda avulsa, reembolso). O formulário é igual ao da conta a pagar: campo <strong>"Repetir"</strong> + quantidade de repetições. Se tiver recorrência, abre o <strong>modal de prévia</strong> com todas as parcelas editáveis antes de confirmar.
+        </p>
+        <h4>Status automático</h4>
+        <div class="note">
+          O sistema muda automaticamente de <strong>Pendente → Atrasado</strong> quando a data de vencimento passa e o status ainda é "Pendente". Não precisa de ação manual.
+        </div>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Vinculada à <strong>Empresa</strong> (cliente)</li>
+          <li>Vinculada ao <strong>Negócio</strong> de origem (quando gerada do CRM)</li>
+          <li>Vinculada à <strong>Conta bancária</strong> onde o dinheiro entra</li>
+          <li>Vinculada ao <strong>Produto</strong> (quando gerada do CRM)</li>
+          <li>Vinculada à <strong>Categoria financeira</strong></li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Lista</strong> — filtro por status (pendente/atrasado/pago), vencimento, empresa, categoria</li>
+          <li><strong>Ficha</strong> — detalhes + link para o negócio e empresa + Histórico</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CONTA A PAGAR -->
+    <div class="obj">
+      <div class="obj-header">
+        <h3>Conta a pagar</h3>
+        <span class="desc">— dinheiro que você deve a alguém</span>
+      </div>
+      <div class="obj-body">
+        <h4>Campos</h4>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th></tr>
+          <tr><td>Descrição</td><td>texto</td><td>sim</td></tr>
+          <tr><td>Empresa (fornecedor)</td><td>vínculo → Empresa</td><td>não</td></tr>
+          <tr><td>Grupo de parcelas</td><td>identificador (agrupa parcelas da mesma origem)</td><td>automático</td></tr>
+          <tr><td>Parcela</td><td>texto (ex.: "3/12")</td><td>automático</td></tr>
+          <tr><td>Valor</td><td>moeda</td><td>sim</td></tr>
+          <tr><td>Vencimento</td><td>data</td><td>sim</td></tr>
+          <tr><td>Status</td><td>seleção: Pendente, Pago, Atrasado, Cancelado</td><td>sim</td></tr>
+          <tr><td>Data de pagamento</td><td>data</td><td>não</td></tr>
+          <tr><td>Valor pago</td><td>moeda</td><td>não</td></tr>
+          <tr><td>Conta bancária</td><td>vínculo → Conta bancária (de onde saiu)</td><td>ao pagar</td></tr>
+          <tr><td>Categoria</td><td>vínculo → Categoria financeira</td><td>não</td></tr>
+        </table>
+        <h4>Criação: manual com opção de recorrência</h4>
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Ao criar uma conta a pagar, o formulário tem um campo <strong>"Repetir"</strong>:
+        </p>
+        <table class="fields">
+          <tr><th>Campo</th><th>Tipo</th></tr>
+          <tr><td>Repetir</td><td>seleção: Não repetir, Mensal, Bimestral, Trimestral, Semestral, Anual</td></tr>
+          <tr><td>Quantidade de repetições</td><td>número (ex.: 12 para um ano de aluguel mensal)</td></tr>
+        </table>
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Se <strong>Repetir ≠ "Não repetir"</strong>, ao clicar em "Salvar" o sistema abre um <strong>modal de prévia</strong> (mesmo padrão do popup de contas a receber):
+        </p>
+        <div class="note">
+          <strong>Modal:</strong> tabela com todas as parcelas que serão criadas (ex.: 12 linhas para aluguel mensal). Cada linha mostra descrição, valor, vencimento, conta bancária e categoria — tudo <strong>editável individualmente</strong> antes de confirmar. Botões: "Confirmar e gerar" / "Cancelar".
+        </div>
+        <h4>Status automático</h4>
+        <div class="note">
+          O sistema muda automaticamente de <strong>Pendente → Atrasado</strong> quando a data de vencimento passa e o status ainda é "Pendente". Não precisa de ação manual.
+        </div>
+        <h4>Vínculos</h4>
+        <ul class="links">
+          <li>Vinculada à <strong>Empresa</strong> (fornecedor), quando aplicável</li>
+          <li>Vinculada à <strong>Conta bancária</strong> de onde sai o pagamento</li>
+          <li>Vinculada à <strong>Categoria financeira</strong></li>
+        </ul>
+        <h4>Telas</h4>
+        <ul class="links">
+          <li><strong>Lista</strong> — filtro por status, vencimento, categoria, empresa</li>
+          <li><strong>Ficha</strong> — detalhes + link para empresa + Histórico</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===================== FLUXO CRM → FINANCEIRO ===================== -->
+    <h2>Fluxo: Negócio ganho → Contas a receber</h2>
+    <div class="flow-box">
+      <h3>O que acontece quando o vendedor marca "Ganho"</h3>
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-text">Vendedor move o <strong>Negócio</strong> para estágio <strong>"Ganho"</strong>.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-text">Sistema abre um <strong>popup de confirmação</strong> com uma tabela editável. Cada linha é um <strong>item de linha do negócio</strong> transformado em conta a receber:</div>
+      </div>
+    </div>
+
+    <div class="obj" style="border-color: var(--green);">
+      <div class="obj-header" style="background: #f0fdf4;">
+        <h3>Popup: "Gerar contas a receber"</h3>
+      </div>
+      <div class="obj-body">
+        <p style="font-size: 0.88rem; margin-bottom: 0.65rem;">
+          O popup tem <strong>dois modos</strong> selecionáveis no topo. O usuário escolhe conforme a forma de cobrança combinada com o cliente.
+        </p>
+
+        <!-- MODO 1 -->
+        <h4 style="margin-top: 0.75rem;">Modo 1: Por item (padrão)</h4>
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Cada item de linha vira uma conta a receber <strong>independente</strong>. Útil quando cada produto tem condição de pagamento diferente.
+        </p>
+        <table class="fields">
+          <tr>
+            <th>Produto</th>
+            <th>Valor</th>
+            <th>Parcelas</th>
+            <th>1º vencimento</th>
+            <th>Conta bancária</th>
+            <th>Categoria</th>
+          </tr>
+          <tr>
+            <td>Licença anual</td>
+            <td>R$ 8.000 <em style="color: var(--muted);">editável</em></td>
+            <td>2x <em style="color: var(--muted);">editável</em></td>
+            <td>15/05/2026 <em style="color: var(--muted);">editável</em></td>
+            <td>Itaú PJ <em style="color: var(--muted);">selecionável</em></td>
+            <td>Venda <em style="color: var(--muted);">selecionável</em></td>
+          </tr>
+          <tr>
+            <td>Implantação</td>
+            <td>R$ 2.000 <em style="color: var(--muted);">editável</em></td>
+            <td>1x <em style="color: var(--muted);">editável</em></td>
+            <td>15/05/2026 <em style="color: var(--muted);">editável</em></td>
+            <td>Itaú PJ <em style="color: var(--muted);">selecionável</em></td>
+            <td>Serviço <em style="color: var(--muted);">selecionável</em></td>
+          </tr>
+          <tr>
+            <td>Suporte mensal</td>
+            <td>R$ 1.200 <em style="color: var(--muted);">editável</em></td>
+            <td>12x <em style="color: var(--muted);">editável</em></td>
+            <td>15/05/2026 <em style="color: var(--muted);">editável</em></td>
+            <td>Itaú PJ <em style="color: var(--muted);">selecionável</em></td>
+            <td>Serviço <em style="color: var(--muted);">selecionável</em></td>
+          </tr>
+        </table>
+        <div class="note">
+          <strong>Resultado:</strong> gera 2 + 1 + 12 = <strong>15 contas a receber</strong>. Cada uma sabe de qual produto veio, qual categoria e em qual conta bancária esperar o dinheiro.
+        </div>
+
+        <!-- MODO 2 -->
+        <h4 style="margin-top: 1.25rem;">Modo 2: Consolidado (parcela única por vencimento)</h4>
+        <p style="font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Soma todos os itens em um <strong>valor total</strong> e divide em N parcelas iguais. O sistema distribui o percentual de cada produto automaticamente dentro de cada parcela (rateio proporcional), para manter a rastreabilidade nos relatórios.
+        </p>
+        <table class="fields" style="margin-bottom: 0.35rem;">
+          <tr><th colspan="2" style="background: #f0fdf4;">Configuração geral</th></tr>
+          <tr><td><strong>Valor total</strong></td><td>R$ 11.200 (soma dos 3 itens)</td></tr>
+          <tr><td><strong>Parcelas</strong></td><td>3x <em style="color: var(--muted);">editável</em></td></tr>
+          <tr><td><strong>1º vencimento</strong></td><td>15/05/2026 <em style="color: var(--muted);">editável</em></td></tr>
+          <tr><td><strong>Conta bancária</strong></td><td>Itaú PJ <em style="color: var(--muted);">selecionável</em></td></tr>
+        </table>
+        <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">Prévia das 3 parcelas geradas (com rateio interno):</p>
+        <table class="fields">
+          <tr>
+            <th>Parcela</th>
+            <th>Valor</th>
+            <th>Vencimento</th>
+            <th>Rateio interno</th>
+          </tr>
+          <tr>
+            <td>1/3</td>
+            <td>R$ 3.733,33</td>
+            <td>15/05/2026</td>
+            <td>71,4% Licença · 17,9% Implantação · 10,7% Suporte</td>
+          </tr>
+          <tr>
+            <td>2/3</td>
+            <td>R$ 3.733,33</td>
+            <td>15/06/2026</td>
+            <td>71,4% Licença · 17,9% Implantação · 10,7% Suporte</td>
+          </tr>
+          <tr>
+            <td>3/3</td>
+            <td>R$ 3.733,34</td>
+            <td>15/07/2026</td>
+            <td>71,4% Licença · 17,9% Implantação · 10,7% Suporte</td>
+          </tr>
+        </table>
+        <div class="note">
+          <strong>Rateio:</strong> é calculado pela proporção de cada item no total (8.000/11.200 = 71,4%, etc.). Fica salvo dentro da conta a receber para relatórios por produto ou categoria — mas o <strong>valor cobrado do cliente é um só por parcela</strong>.
+        </div>
+
+        <h4 style="margin-top: 1.25rem;">Em ambos os modos</h4>
+        <ul class="links">
+          <li>O usuário pode <strong>editar qualquer campo</strong> de qualquer linha antes de confirmar</li>
+          <li>Parcelas > 1 geram vencimentos mensais a partir da data informada</li>
+          <li><strong>Botões:</strong> "Confirmar e gerar" / "Cancelar"</li>
+          <li>Cada conta a receber criada fica vinculada à <strong>Empresa</strong>, ao <strong>Negócio</strong> e ao(s) <strong>Produto(s)</strong> de origem</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="flow-box">
+      <h3>Depois de confirmar</h3>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-text">Sistema cria as <strong>Contas a receber</strong> com status "Pendente", vinculadas à <strong>Empresa</strong> e ao <strong>Negócio</strong> de origem.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-text">Quando o cliente paga, o financeiro marca a conta como <strong>"Pago"</strong>, informa <strong>data</strong>, <strong>valor recebido</strong> e em qual <strong>conta bancária</strong> entrou. Saldo da conta atualiza.</div>
+      </div>
+    </div>
+
+    <!-- ===================== FLUXO CRM ===================== -->
+    <h2>Fluxo CRM: da prospecção ao fechamento</h2>
+    <div class="flow-box">
+      <h3>Como os objetos se conectam no dia a dia</h3>
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-text">Cadastra a <strong>Empresa</strong> (tipo: cliente) e o <strong>Contato</strong> vinculado a ela.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-text">Abre um <strong>Negócio</strong> vinculado a essa empresa. Estágio inicial: "Novo".</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-text">Adiciona <strong>Itens de linha</strong> no negócio: escolhe <strong>Produto</strong>, define quantidade e preço. O valor total do negócio é calculado.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-text">Registra <strong>Atividades</strong> conforme negocia: ligações, reuniões, lembretes, notas. Tudo fica na timeline do negócio e do contato.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">5</div>
+        <div class="flow-text">Move o negócio pelos <strong>estágios do pipeline</strong>: Qualificado → Proposta → Negociação → <strong>Ganho</strong> (ou Perdido com motivo).</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">6</div>
+        <div class="flow-text">Se ganho → abre o <strong>popup de geração de contas a receber</strong> (descrito acima). Financeiro passa a acompanhar os recebimentos. Opcionalmente, o usuário pode <strong>criar um Projeto</strong> vinculado a esse negócio para acompanhar a entrega.</div>
+      </div>
+    </div>
+
+    <!-- ===================== TELAS ===================== -->
+    <h2>Telas do sistema (resumo)</h2>
+    <div class="screens">
+      <div class="screen">
+        <h4>Sidebar (menu lateral)</h4>
+        <strong>CRM:</strong> Dashboard, Empresas, Contatos, Negócios, Produtos, Lembretes<br>
+        <strong>Projetos:</strong> Lista de projetos, Todas as tarefas, Kanban geral, Timeline geral, Minhas tarefas<br>
+        <strong>Financeiro:</strong> Contas a receber, Contas a pagar, Contas bancárias<br>
+        <strong>Configurações:</strong> Pipelines, Categorias financeiras, Log de atividades
+      </div>
+      <div class="screen">
+        <h4>Lista / tabela</h4>
+        Cada objeto tem uma tela de lista com colunas, busca, filtros e ordenação.
+      </div>
+      <div class="screen">
+        <h4>Kanban</h4>
+        Negócios por estágio do pipeline. Drag-and-drop para mover.
+      </div>
+      <div class="screen">
+        <h4>Ficha do registro</h4>
+        Campos do objeto + abas com registros vinculados + timeline de atividades.
+      </div>
+      <div class="screen">
+        <h4>Formulário</h4>
+        Criar/editar qualquer registro. Campos conforme o objeto.
+      </div>
+      <div class="screen">
+        <h4>Meus lembretes</h4>
+        Lista pessoal de lembretes pendentes/atrasados, filtrada por data.
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <code>doc-produto.html</code>
+  </footer>
+</body>
+</html>
