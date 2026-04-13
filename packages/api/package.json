@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsup src/server.ts src/migrate.ts --format esm --out-dir dist",
+    "build": "tsup src/server.ts src/migrate.ts src/seed-admin.ts --format esm --out-dir dist",
     "start": "node dist/server.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
