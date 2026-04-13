@@ -322,8 +322,11 @@ function BancosWidget() {
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: ["contas-bancarias"],
     queryFn: async () => {
-      const { data } = await api.get<{ data: BankRow[] }>("/contas-bancarias");
-      return data;
+      const res = await api.get("/contas-bancarias");
+      const d = res.data;
+      if (Array.isArray(d)) return d;
+      if (d && Array.isArray(d.data)) return d.data;
+      return [];
     },
   });
 
@@ -335,7 +338,7 @@ function BancosWidget() {
     return <QueryErrorState onRetry={() => refetch()} />;
   }
 
-  const accounts = data?.data ?? [];
+  const accounts: BankRow[] = data ?? [];
   const total = accounts.reduce((acc, a) => acc + parseNum(a.currentBalance), 0);
 
   return (
