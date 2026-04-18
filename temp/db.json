@@ -1,2653 +1,469 @@
 {
-    "generated_at": "2026-04-13T01:44:09Z",
-    "database": "lhcx",
-    "tables": [
-        {
-            "schema": "drizzle",
-            "name": "__drizzle_migrations",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "integer",
-                    "udt": "int4",
-                    "nullable": false,
-                    "default": "nextval('drizzle.__drizzle_migrations_id_seq'::regclass)"
-                },
-                {
-                    "name": "hash",
-                    "ordinal": 2,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 3,
-                    "data_type": "bigint",
-                    "udt": "int8",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "__drizzle_migrations_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "criar_contato",
+          "responseMode": "responseNode",
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "activities",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "type",
-                    "ordinal": 2,
-                    "data_type": "USER-DEFINED",
-                    "udt": "activity_type",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "created_by_id",
-                    "ordinal": 4,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "linked_company_id",
-                    "ordinal": 5,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "linked_contact_id",
-                    "ordinal": 6,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "linked_deal_id",
-                    "ordinal": 7,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "linked_project_id",
-                    "ordinal": 8,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "linked_task_id",
-                    "ordinal": 9,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "title",
-                    "ordinal": 10,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "body",
-                    "ordinal": 11,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "reminder_due_date",
-                    "ordinal": 12,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "reminder_completed_at",
-                    "ordinal": 13,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "reminder_responsible_id",
-                    "ordinal": 14,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "call_duration_minutes",
-                    "ordinal": 15,
-                    "data_type": "integer",
-                    "udt": "int4",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "call_result",
-                    "ordinal": 16,
-                    "data_type": "USER-DEFINED",
-                    "udt": "call_result",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "meeting_date",
-                    "ordinal": 17,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "meeting_participants",
-                    "ordinal": 18,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "email_subject",
-                    "ordinal": 19,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "activities_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1888,
+          208
+        ],
+        "id": "129ee9f5-51e4-462e-8976-5be6da9a5e5b",
+        "name": "Webhook",
+        "webhookId": "1528ef51-f220-4a65-af6a-b2e4bcfb1548"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://crm.lhcx.tech/api/auth/login",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={ \"email\": \"adm@lhcx.tech\", \"password\": \"B123b456$\" }",
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "audit_log",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "user_id",
-                    "ordinal": 3,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "object_type",
-                    "ordinal": 4,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "record_id",
-                    "ordinal": 5,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "action",
-                    "ordinal": 6,
-                    "data_type": "USER-DEFINED",
-                    "udt": "audit_action",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "field",
-                    "ordinal": 7,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "old_value",
-                    "ordinal": 8,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "new_value",
-                    "ordinal": 9,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "audit_log_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -1664,
+          208
+        ],
+        "id": "5b27bc69-1aaa-4a17-8fbd-10db78222218",
+        "name": "Login CRM"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1",
+                "name": "token",
+                "value": "={{ $json.token }}",
+                "type": "string"
+              },
+              {
+                "id": "2",
+                "name": "fullName",
+                "value": "={{ $('Webhook').item.json.body.fullName }}",
+                "type": "string"
+              },
+              {
+                "id": "3",
+                "name": "email",
+                "value": "={{ $('Webhook').item.json.body.email }}",
+                "type": "string"
+              },
+              {
+                "id": "4",
+                "name": "phone",
+                "value": "={{ $('Webhook').item.json.body.phone || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "5",
+                "name": "jobTitle",
+                "value": "={{ $('Webhook').item.json.body.jobTitle || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "6",
+                "name": "message",
+                "value": "={{ $('Webhook').item.json.body.message || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "7",
+                "name": "source",
+                "value": "={{ $('Webhook').item.json.body.source || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "8",
+                "name": "utmSource",
+                "value": "={{ $('Webhook').item.json.body.utm_source || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "9",
+                "name": "utmMedium",
+                "value": "={{ $('Webhook').item.json.body.utm_medium || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "10",
+                "name": "utmCampaign",
+                "value": "={{ $('Webhook').item.json.body.utm_campaign || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "11",
+                "name": "utmTerm",
+                "value": "={{ $('Webhook').item.json.body.utm_term || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "12",
+                "name": "utmContent",
+                "value": "={{ $('Webhook').item.json.body.utm_content || '' }}",
+                "type": "string"
+              },
+              {
+                "id": "13",
+                "name": "formData",
+                "value": "={{ JSON.stringify($('Webhook').item.json.body.formData || {}) }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "bank_accounts",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "name",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "bank_name",
-                    "ordinal": 6,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "branch_account",
-                    "ordinal": 7,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "initial_balance",
-                    "ordinal": 8,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": false,
-                    "default": "'0'::numeric"
-                },
-                {
-                    "name": "active",
-                    "ordinal": 9,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "true"
-                }
-            ],
-            "primary_key": {
-                "name": "bank_accounts_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -1440,
+          208
+        ],
+        "id": "39044e84-0909-400e-98a8-25b23b4da986",
+        "name": "Preparar Dados"
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "=https://crm.lhcx.tech/api/contatos?email={{ encodeURIComponent($json.email) }}&perPage=1",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $json.token }}"
+              }
+            ]
+          },
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "companies",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "legal_name",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "trade_name",
-                    "ordinal": 6,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "document",
-                    "ordinal": 7,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "phone",
-                    "ordinal": 8,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "email",
-                    "ordinal": 9,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "address",
-                    "ordinal": 10,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "type",
-                    "ordinal": 11,
-                    "data_type": "USER-DEFINED",
-                    "udt": "company_type",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "responsible_id",
-                    "ordinal": 12,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -1216,
+          208
+        ],
+        "id": "c050bd12-f097-4985-9884-e03220195d84",
+        "name": "Buscar Contato"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "1",
+                "leftValue": "={{ $json.data ? $json.data.length : 0 }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gt"
                 }
+              }
             ],
-            "primary_key": {
-                "name": "companies_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+            "combinator": "and"
+          },
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "contact_companies",
-            "columns": [
-                {
-                    "name": "contact_id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "company_id",
-                    "ordinal": 2,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                }
-            ],
-            "primary_key": null
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -992,
+          208
+        ],
+        "id": "ab542fff-e0c4-4907-9693-25735fecb138",
+        "name": "Contato existe?"
+      },
+      {
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://crm.lhcx.tech/api/contatos/{{ $json.data[0].id }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Preparar Dados').item.json.token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"fullName\": \"{{ $('Preparar Dados').item.json.fullName }}\",\n  \"phone\": \"{{ $('Preparar Dados').item.json.phone }}\",\n  \"jobTitle\": \"{{ $('Preparar Dados').item.json.jobTitle }}\"\n}",
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "contacts",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "full_name",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "email",
-                    "ordinal": 6,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "phone",
-                    "ordinal": 7,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "job_title",
-                    "ordinal": 8,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "origin",
-                    "ordinal": 9,
-                    "data_type": "USER-DEFINED",
-                    "udt": "contact_origin",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "stage",
-                    "ordinal": 10,
-                    "data_type": "USER-DEFINED",
-                    "udt": "contact_stage",
-                    "nullable": false,
-                    "default": "'new'::contact_stage"
-                },
-                {
-                    "name": "responsible_id",
-                    "ordinal": 11,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "contacts_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -768,
+          112
+        ],
+        "id": "92412ac4-2084-4f5c-977b-e0421497ab6c",
+        "name": "Atualizar Contato"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://crm.lhcx.tech/api/contatos",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Preparar Dados').item.json.token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"fullName\": \"{{ $('Preparar Dados').item.json.fullName }}\",\n  \"email\": \"{{ $('Preparar Dados').item.json.email }}\",\n  \"phone\": \"{{ $('Preparar Dados').item.json.phone }}\",\n  \"jobTitle\": \"{{ $('Preparar Dados').item.json.jobTitle }}\",\n  \"origin\": \"website\",\n  \"stage\": \"new\"\n}",
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "deal_contacts",
-            "columns": [
-                {
-                    "name": "deal_id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "contact_id",
-                    "ordinal": 2,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "deal_contacts_pk",
-                "columns": [
-                    "deal_id",
-                    "contact_id"
-                ]
-            }
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -768,
+          304
+        ],
+        "id": "3f805bbf-acab-446f-8d23-21f289d4f51b",
+        "name": "Criar Contato"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://crm.lhcx.tech/api/atividades",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $('Preparar Dados').item.json.token }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ type: 'note', title: 'Lead recebido via ' + ($('Preparar Dados').item.json.source || 'website'), body: (function() { var d = $('Preparar Dados').item.json; var lines = []; lines.push('Nome: ' + d.fullName); lines.push('Email: ' + d.email); if (d.phone) lines.push('Telefone: ' + d.phone); if (d.jobTitle) lines.push('Interesse: ' + d.jobTitle); if (d.message) lines.push('Mensagem: ' + d.message); lines.push('Origem: ' + (d.source || 'website')); try { var fd = JSON.parse(d.formData || '{}'); var skip = ['name','nome','fullName','email','phone','telefone','message','mensagem','necessidades','interest','interesse','formType','utm_source','utm_medium','utm_campaign','utm_term','utm_content']; lines.push(''); lines.push('--- Dados do Formulário ---'); Object.keys(fd).forEach(function(k) { if (skip.indexOf(k) >= 0) return; var v = fd[k]; if (Array.isArray(v)) v = v.join(', '); if (v && String(v).trim()) lines.push(k + ': ' + v); }); } catch(e) {} if (d.utmSource || d.utmMedium || d.utmCampaign) { lines.push(''); lines.push('--- UTM ---'); if (d.utmSource) lines.push('Source: ' + d.utmSource); if (d.utmMedium) lines.push('Medium: ' + d.utmMedium); if (d.utmCampaign) lines.push('Campaign: ' + d.utmCampaign); if (d.utmTerm) lines.push('Term: ' + d.utmTerm); if (d.utmContent) lines.push('Content: ' + d.utmContent); } return lines.join('\\n'); })(), linkedContactId: $json.id }) }}",
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "deal_line_items",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "deal_id",
-                    "ordinal": 2,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "product_id",
-                    "ordinal": 3,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "quantity",
-                    "ordinal": 4,
-                    "data_type": "integer",
-                    "udt": "int4",
-                    "nullable": false,
-                    "default": "1"
-                },
-                {
-                    "name": "unit_price",
-                    "ordinal": 5,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "discount_percent",
-                    "ordinal": 6,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": true,
-                    "default": "'0'::numeric"
-                },
-                {
-                    "name": "subtotal",
-                    "ordinal": 7,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": false,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "deal_line_items_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -544,
+          208
+        ],
+        "id": "bd98fda0-f039-419f-b443-3d27de3c7d6f",
+        "name": "Criar Nota Timeline"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={ \"success\": true, \"id\": \"{{ $json.id }}\" }",
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "deals",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "title",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "company_id",
-                    "ordinal": 6,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "pipeline_id",
-                    "ordinal": 7,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "stage_id",
-                    "ordinal": 8,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "total_value",
-                    "ordinal": 9,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "forecast_date",
-                    "ordinal": 10,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "responsible_id",
-                    "ordinal": 11,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "loss_reason",
-                    "ordinal": 12,
-                    "data_type": "USER-DEFINED",
-                    "udt": "deal_loss_reason",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "deals_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          -320,
+          208
+        ],
+        "id": "ec0e4daa-10e7-4de8-b4ff-e852b6b7db18",
+        "name": "Resposta Sucesso"
+      },
+      {
+        "parameters": {
+          "fromEmail": "contato@lhcx.tech",
+          "toEmail": "luishcuba@gmail.com",
+          "subject": "NOVO LEAD",
+          "emailFormat": "text",
+          "text": "=Nome: {{ $('Preparar Dados').item.json.fullName }}\nE-mail:{{ $('Preparar Dados').item.json.email }}\nTelefone:{{ $('Preparar Dados').item.json.phone }}\nMensagem:{{ $('Preparar Dados').item.json.message }}\n\n\nRaw: {{ $('Preparar Dados').item.json.formData }}",
+          "options": {}
         },
-        {
-            "schema": "public",
-            "name": "financial_categories",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "name",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "type",
-                    "ordinal": 6,
-                    "data_type": "USER-DEFINED",
-                    "udt": "financial_category_type",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "active",
-                    "ordinal": 7,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "true"
-                }
-            ],
-            "primary_key": {
-                "name": "financial_categories_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "payables",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "description",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "company_id",
-                    "ordinal": 6,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "parcel_group",
-                    "ordinal": 7,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "parcel_label",
-                    "ordinal": 8,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "value",
-                    "ordinal": 9,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "due_date",
-                    "ordinal": 10,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "status",
-                    "ordinal": 11,
-                    "data_type": "USER-DEFINED",
-                    "udt": "payable_receivable_status",
-                    "nullable": false,
-                    "default": "'pending'::payable_receivable_status"
-                },
-                {
-                    "name": "payment_date",
-                    "ordinal": 12,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "paid_value",
-                    "ordinal": 13,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "bank_account_id",
-                    "ordinal": 14,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "category_id",
-                    "ordinal": 15,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "payables_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "pipeline_stages",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "pipeline_id",
-                    "ordinal": 2,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "name",
-                    "ordinal": 3,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "order",
-                    "ordinal": 4,
-                    "data_type": "integer",
-                    "udt": "int4",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "type",
-                    "ordinal": 5,
-                    "data_type": "USER-DEFINED",
-                    "udt": "pipeline_stage_type",
-                    "nullable": false,
-                    "default": "'open'::pipeline_stage_type"
-                }
-            ],
-            "primary_key": {
-                "name": "pipeline_stages_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "pipelines",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "name",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "active",
-                    "ordinal": 6,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "true"
-                }
-            ],
-            "primary_key": {
-                "name": "pipelines_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "products",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "name",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "sku",
-                    "ordinal": 6,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "description",
-                    "ordinal": 7,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "base_price",
-                    "ordinal": 8,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "unit",
-                    "ordinal": 9,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "active",
-                    "ordinal": 10,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "true"
-                }
-            ],
-            "primary_key": {
-                "name": "products_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "project_responsibles",
-            "columns": [
-                {
-                    "name": "project_id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "user_id",
-                    "ordinal": 2,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                }
-            ],
-            "primary_key": null
-        },
-        {
-            "schema": "public",
-            "name": "project_stages",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "project_id",
-                    "ordinal": 2,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "name",
-                    "ordinal": 3,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "percentage",
-                    "ordinal": 4,
-                    "data_type": "integer",
-                    "udt": "int4",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "macro_group",
-                    "ordinal": 5,
-                    "data_type": "USER-DEFINED",
-                    "udt": "project_macro_group",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "order",
-                    "ordinal": 6,
-                    "data_type": "integer",
-                    "udt": "int4",
-                    "nullable": false,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "project_stages_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "project_subtasks",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "title",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "task_id",
-                    "ordinal": 6,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "responsible_id",
-                    "ordinal": 7,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "stage_id",
-                    "ordinal": 8,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "project_subtasks_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "project_tasks",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "title",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "description",
-                    "ordinal": 6,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "project_id",
-                    "ordinal": 7,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "responsible_id",
-                    "ordinal": 8,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "stage_id",
-                    "ordinal": 9,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "priority",
-                    "ordinal": 10,
-                    "data_type": "USER-DEFINED",
-                    "udt": "priority",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "planned_start_date",
-                    "ordinal": 11,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "planned_end_date",
-                    "ordinal": 12,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "actual_start_date",
-                    "ordinal": 13,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "actual_end_date",
-                    "ordinal": 14,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "depends_on_task_id",
-                    "ordinal": 15,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "project_tasks_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "projects",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "title",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "description",
-                    "ordinal": 6,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "deal_id",
-                    "ordinal": 7,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "planned_start_date",
-                    "ordinal": 8,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "planned_end_date",
-                    "ordinal": 9,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "actual_start_date",
-                    "ordinal": 10,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "actual_end_date",
-                    "ordinal": 11,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "projects_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "receivables",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "description",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "company_id",
-                    "ordinal": 6,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "deal_id",
-                    "ordinal": 7,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "product_id",
-                    "ordinal": 8,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "parcel_group",
-                    "ordinal": 9,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "parcel_label",
-                    "ordinal": 10,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "value",
-                    "ordinal": 11,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "due_date",
-                    "ordinal": 12,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "status",
-                    "ordinal": 13,
-                    "data_type": "USER-DEFINED",
-                    "udt": "payable_receivable_status",
-                    "nullable": false,
-                    "default": "'pending'::payable_receivable_status"
-                },
-                {
-                    "name": "payment_date",
-                    "ordinal": 14,
-                    "data_type": "date",
-                    "udt": "date",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "received_value",
-                    "ordinal": 15,
-                    "data_type": "numeric",
-                    "udt": "numeric",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "bank_account_id",
-                    "ordinal": 16,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "category_id",
-                    "ordinal": 17,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": true,
-                    "default": null
-                }
-            ],
-            "primary_key": {
-                "name": "receivables_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
-        },
-        {
-            "schema": "public",
-            "name": "users",
-            "columns": [
-                {
-                    "name": "id",
-                    "ordinal": 1,
-                    "data_type": "uuid",
-                    "udt": "uuid",
-                    "nullable": false,
-                    "default": "gen_random_uuid()"
-                },
-                {
-                    "name": "created_at",
-                    "ordinal": 2,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "updated_at",
-                    "ordinal": 3,
-                    "data_type": "timestamp with time zone",
-                    "udt": "timestamptz",
-                    "nullable": false,
-                    "default": "now()"
-                },
-                {
-                    "name": "archived",
-                    "ordinal": 4,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": false,
-                    "default": "false"
-                },
-                {
-                    "name": "name",
-                    "ordinal": 5,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "email",
-                    "ordinal": 6,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": false,
-                    "default": null
-                },
-                {
-                    "name": "password_hash",
-                    "ordinal": 7,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "avatar_url",
-                    "ordinal": 8,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "google_id",
-                    "ordinal": 9,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": null
-                },
-                {
-                    "name": "theme_preference",
-                    "ordinal": 10,
-                    "data_type": "text",
-                    "udt": "text",
-                    "nullable": true,
-                    "default": "'system'::text"
-                },
-                {
-                    "name": "sidebar_collapsed",
-                    "ordinal": 11,
-                    "data_type": "boolean",
-                    "udt": "bool",
-                    "nullable": true,
-                    "default": "false"
-                },
-                {
-                    "name": "role",
-                    "ordinal": 12,
-                    "data_type": "USER-DEFINED",
-                    "udt": "user_role",
-                    "nullable": false,
-                    "default": "'member'::user_role"
-                }
-            ],
-            "primary_key": {
-                "name": "users_pkey",
-                "columns": [
-                    "id"
-                ]
-            }
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          -1024,
+          16
+        ],
+        "id": "430fed18-84d2-4ca6-80ba-9fdc75a58a56",
+        "name": "Send email",
+        "webhookId": "b21a8ad8-1bc8-464e-9fae-b06ae8b713fd",
+        "credentials": {
+          "smtp": {
+            "id": "0DKJXYRuxs8BaaIc",
+            "name": "SMTP account"
+          }
         }
+      }
     ],
-    "foreign_keys": [
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Login CRM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Login CRM": {
+        "main": [
+          [
+            {
+              "node": "Preparar Dados",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Preparar Dados": {
+        "main": [
+          [
+            {
+              "node": "Buscar Contato",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Contato": {
+        "main": [
+          [
+            {
+              "node": "Contato existe?",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Contato existe?": {
+        "main": [
+          [
+            {
+              "node": "Atualizar Contato",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Criar Contato",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Atualizar Contato": {
+        "main": [
+          [
+            {
+              "node": "Criar Nota Timeline",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Criar Contato": {
+        "main": [
+          [
+            {
+              "node": "Criar Nota Timeline",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Criar Nota Timeline": {
+        "main": [
+          [
+            {
+              "node": "Resposta Sucesso",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {
+      "Webhook": [
         {
-            "name": "activities_created_by_id_users_id_fk",
-            "from": "public.activities",
-            "columns": [
-                "created_by_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "activities_reminder_responsible_id_users_id_fk",
-            "from": "public.activities",
-            "columns": [
-                "reminder_responsible_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "audit_log_user_id_users_id_fk",
-            "from": "public.audit_log",
-            "columns": [
-                "user_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "companies_responsible_id_users_id_fk",
-            "from": "public.companies",
-            "columns": [
-                "responsible_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "contact_companies_company_id_companies_id_fk",
-            "from": "public.contact_companies",
-            "columns": [
-                "company_id"
-            ],
-            "references": "public.companies",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "contact_companies_contact_id_contacts_id_fk",
-            "from": "public.contact_companies",
-            "columns": [
-                "contact_id"
-            ],
-            "references": "public.contacts",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "contacts_responsible_id_users_id_fk",
-            "from": "public.contacts",
-            "columns": [
-                "responsible_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deal_contacts_contact_id_contacts_id_fk",
-            "from": "public.deal_contacts",
-            "columns": [
-                "contact_id"
-            ],
-            "references": "public.contacts",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deal_contacts_deal_id_deals_id_fk",
-            "from": "public.deal_contacts",
-            "columns": [
-                "deal_id"
-            ],
-            "references": "public.deals",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deal_line_items_deal_id_deals_id_fk",
-            "from": "public.deal_line_items",
-            "columns": [
-                "deal_id"
-            ],
-            "references": "public.deals",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deal_line_items_product_id_products_id_fk",
-            "from": "public.deal_line_items",
-            "columns": [
-                "product_id"
-            ],
-            "references": "public.products",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deals_company_id_companies_id_fk",
-            "from": "public.deals",
-            "columns": [
-                "company_id"
-            ],
-            "references": "public.companies",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deals_pipeline_id_pipelines_id_fk",
-            "from": "public.deals",
-            "columns": [
-                "pipeline_id"
-            ],
-            "references": "public.pipelines",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deals_responsible_id_users_id_fk",
-            "from": "public.deals",
-            "columns": [
-                "responsible_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "deals_stage_id_pipeline_stages_id_fk",
-            "from": "public.deals",
-            "columns": [
-                "stage_id"
-            ],
-            "references": "public.pipeline_stages",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "payables_bank_account_id_bank_accounts_id_fk",
-            "from": "public.payables",
-            "columns": [
-                "bank_account_id"
-            ],
-            "references": "public.bank_accounts",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "payables_category_id_financial_categories_id_fk",
-            "from": "public.payables",
-            "columns": [
-                "category_id"
-            ],
-            "references": "public.financial_categories",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "payables_company_id_companies_id_fk",
-            "from": "public.payables",
-            "columns": [
-                "company_id"
-            ],
-            "references": "public.companies",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "pipeline_stages_pipeline_id_pipelines_id_fk",
-            "from": "public.pipeline_stages",
-            "columns": [
-                "pipeline_id"
-            ],
-            "references": "public.pipelines",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_responsibles_project_id_projects_id_fk",
-            "from": "public.project_responsibles",
-            "columns": [
-                "project_id"
-            ],
-            "references": "public.projects",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_responsibles_user_id_users_id_fk",
-            "from": "public.project_responsibles",
-            "columns": [
-                "user_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_stages_project_id_projects_id_fk",
-            "from": "public.project_stages",
-            "columns": [
-                "project_id"
-            ],
-            "references": "public.projects",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_subtasks_responsible_id_users_id_fk",
-            "from": "public.project_subtasks",
-            "columns": [
-                "responsible_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_subtasks_stage_id_project_stages_id_fk",
-            "from": "public.project_subtasks",
-            "columns": [
-                "stage_id"
-            ],
-            "references": "public.project_stages",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_subtasks_task_id_project_tasks_id_fk",
-            "from": "public.project_subtasks",
-            "columns": [
-                "task_id"
-            ],
-            "references": "public.project_tasks",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_tasks_project_id_projects_id_fk",
-            "from": "public.project_tasks",
-            "columns": [
-                "project_id"
-            ],
-            "references": "public.projects",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_tasks_responsible_id_users_id_fk",
-            "from": "public.project_tasks",
-            "columns": [
-                "responsible_id"
-            ],
-            "references": "public.users",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "project_tasks_stage_id_project_stages_id_fk",
-            "from": "public.project_tasks",
-            "columns": [
-                "stage_id"
-            ],
-            "references": "public.project_stages",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "projects_deal_id_deals_id_fk",
-            "from": "public.projects",
-            "columns": [
-                "deal_id"
-            ],
-            "references": "public.deals",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "receivables_bank_account_id_bank_accounts_id_fk",
-            "from": "public.receivables",
-            "columns": [
-                "bank_account_id"
-            ],
-            "references": "public.bank_accounts",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "receivables_category_id_financial_categories_id_fk",
-            "from": "public.receivables",
-            "columns": [
-                "category_id"
-            ],
-            "references": "public.financial_categories",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "receivables_company_id_companies_id_fk",
-            "from": "public.receivables",
-            "columns": [
-                "company_id"
-            ],
-            "references": "public.companies",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "receivables_deal_id_deals_id_fk",
-            "from": "public.receivables",
-            "columns": [
-                "deal_id"
-            ],
-            "references": "public.deals",
-            "ref_columns": [
-                "id"
-            ]
-        },
-        {
-            "name": "receivables_product_id_products_id_fk",
-            "from": "public.receivables",
-            "columns": [
-                "product_id"
-            ],
-            "references": "public.products",
-            "ref_columns": [
-                "id"
-            ]
+          "headers": {
+            "host": "flux.lhcx.tech",
+            "user-agent": "node",
+            "content-length": "449",
+            "accept": "*/*",
+            "accept-encoding": "br, gzip, deflate",
+            "accept-language": "*",
+            "content-type": "application/json",
+            "sec-fetch-mode": "cors",
+            "x-forwarded-for": "172.20.0.1",
+            "x-forwarded-host": "flux.lhcx.tech",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "7940c2bad168",
+            "x-real-ip": "172.20.0.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "fullName": "Luis Henrique Cuba",
+            "email": "luishcuba@gmail.com",
+            "phone": "+5519981621022",
+            "jobTitle": "dashboards",
+            "message": "teste",
+            "source": "contato",
+            "utm_source": "",
+            "utm_medium": "",
+            "utm_campaign": "",
+            "utm_term": "",
+            "utm_content": "",
+            "formData": {
+              "name": "Luis Henrique Cuba",
+              "email": "luishcuba@gmail.com",
+              "phone": "+5519981621022",
+              "interest": "dashboards",
+              "message": "teste",
+              "utm_source": "",
+              "utm_medium": "",
+              "utm_campaign": "",
+              "utm_term": "",
+              "utm_content": ""
+            }
+          },
+          "webhookUrl": "https://flux.lhcx.tech/webhook/criar_contato",
+          "executionMode": "production"
         }
-    ],
-    "indexes": [
-        {
-            "schema": "drizzle",
-            "table": "__drizzle_migrations",
-            "name": "__drizzle_migrations_pkey",
-            "definition": "CREATE UNIQUE INDEX __drizzle_migrations_pkey ON drizzle.__drizzle_migrations USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "activities",
-            "name": "activities_pkey",
-            "definition": "CREATE UNIQUE INDEX activities_pkey ON public.activities USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "activities",
-            "name": "idx_activities_linked_company_id",
-            "definition": "CREATE INDEX idx_activities_linked_company_id ON public.activities USING btree (linked_company_id)"
-        },
-        {
-            "schema": "public",
-            "table": "activities",
-            "name": "idx_activities_linked_contact_id",
-            "definition": "CREATE INDEX idx_activities_linked_contact_id ON public.activities USING btree (linked_contact_id)"
-        },
-        {
-            "schema": "public",
-            "table": "activities",
-            "name": "idx_activities_linked_deal_id",
-            "definition": "CREATE INDEX idx_activities_linked_deal_id ON public.activities USING btree (linked_deal_id)"
-        },
-        {
-            "schema": "public",
-            "table": "activities",
-            "name": "idx_activities_linked_project_id",
-            "definition": "CREATE INDEX idx_activities_linked_project_id ON public.activities USING btree (linked_project_id)"
-        },
-        {
-            "schema": "public",
-            "table": "activities",
-            "name": "idx_activities_reminder_responsible_id",
-            "definition": "CREATE INDEX idx_activities_reminder_responsible_id ON public.activities USING btree (reminder_responsible_id)"
-        },
-        {
-            "schema": "public",
-            "table": "activities",
-            "name": "idx_activities_type",
-            "definition": "CREATE INDEX idx_activities_type ON public.activities USING btree (type)"
-        },
-        {
-            "schema": "public",
-            "table": "audit_log",
-            "name": "audit_log_pkey",
-            "definition": "CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "bank_accounts",
-            "name": "bank_accounts_pkey",
-            "definition": "CREATE UNIQUE INDEX bank_accounts_pkey ON public.bank_accounts USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "bank_accounts",
-            "name": "idx_bank_accounts_archived",
-            "definition": "CREATE INDEX idx_bank_accounts_archived ON public.bank_accounts USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "companies",
-            "name": "companies_document_unique",
-            "definition": "CREATE UNIQUE INDEX companies_document_unique ON public.companies USING btree (document)"
-        },
-        {
-            "schema": "public",
-            "table": "companies",
-            "name": "companies_pkey",
-            "definition": "CREATE UNIQUE INDEX companies_pkey ON public.companies USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "companies",
-            "name": "idx_companies_archived",
-            "definition": "CREATE INDEX idx_companies_archived ON public.companies USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "contact_companies",
-            "name": "idx_contact_companies_company_id",
-            "definition": "CREATE INDEX idx_contact_companies_company_id ON public.contact_companies USING btree (company_id)"
-        },
-        {
-            "schema": "public",
-            "table": "contact_companies",
-            "name": "idx_contact_companies_contact_id",
-            "definition": "CREATE INDEX idx_contact_companies_contact_id ON public.contact_companies USING btree (contact_id)"
-        },
-        {
-            "schema": "public",
-            "table": "contact_companies",
-            "name": "idx_contact_companies_unique",
-            "definition": "CREATE UNIQUE INDEX idx_contact_companies_unique ON public.contact_companies USING btree (contact_id, company_id)"
-        },
-        {
-            "schema": "public",
-            "table": "contacts",
-            "name": "contacts_email_unique",
-            "definition": "CREATE UNIQUE INDEX contacts_email_unique ON public.contacts USING btree (email)"
-        },
-        {
-            "schema": "public",
-            "table": "contacts",
-            "name": "contacts_pkey",
-            "definition": "CREATE UNIQUE INDEX contacts_pkey ON public.contacts USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "contacts",
-            "name": "idx_contacts_archived",
-            "definition": "CREATE INDEX idx_contacts_archived ON public.contacts USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "contacts",
-            "name": "idx_contacts_email",
-            "definition": "CREATE INDEX idx_contacts_email ON public.contacts USING btree (email)"
-        },
-        {
-            "schema": "public",
-            "table": "contacts",
-            "name": "idx_contacts_full_name",
-            "definition": "CREATE INDEX idx_contacts_full_name ON public.contacts USING btree (full_name)"
-        },
-        {
-            "schema": "public",
-            "table": "contacts",
-            "name": "idx_contacts_responsible_id",
-            "definition": "CREATE INDEX idx_contacts_responsible_id ON public.contacts USING btree (responsible_id)"
-        },
-        {
-            "schema": "public",
-            "table": "contacts",
-            "name": "idx_contacts_stage",
-            "definition": "CREATE INDEX idx_contacts_stage ON public.contacts USING btree (stage)"
-        },
-        {
-            "schema": "public",
-            "table": "deal_contacts",
-            "name": "deal_contacts_pk",
-            "definition": "CREATE UNIQUE INDEX deal_contacts_pk ON public.deal_contacts USING btree (deal_id, contact_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deal_contacts",
-            "name": "idx_deal_contacts_contact_id",
-            "definition": "CREATE INDEX idx_deal_contacts_contact_id ON public.deal_contacts USING btree (contact_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deal_contacts",
-            "name": "idx_deal_contacts_deal_id",
-            "definition": "CREATE INDEX idx_deal_contacts_deal_id ON public.deal_contacts USING btree (deal_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deal_contacts",
-            "name": "idx_deal_contacts_unique",
-            "definition": "CREATE UNIQUE INDEX idx_deal_contacts_unique ON public.deal_contacts USING btree (deal_id, contact_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deal_line_items",
-            "name": "deal_line_items_pkey",
-            "definition": "CREATE UNIQUE INDEX deal_line_items_pkey ON public.deal_line_items USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "deal_line_items",
-            "name": "idx_deal_line_items_deal_id",
-            "definition": "CREATE INDEX idx_deal_line_items_deal_id ON public.deal_line_items USING btree (deal_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deal_line_items",
-            "name": "idx_deal_line_items_product_id",
-            "definition": "CREATE INDEX idx_deal_line_items_product_id ON public.deal_line_items USING btree (product_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deals",
-            "name": "deals_pkey",
-            "definition": "CREATE UNIQUE INDEX deals_pkey ON public.deals USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "deals",
-            "name": "idx_deals_archived",
-            "definition": "CREATE INDEX idx_deals_archived ON public.deals USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "deals",
-            "name": "idx_deals_company_id",
-            "definition": "CREATE INDEX idx_deals_company_id ON public.deals USING btree (company_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deals",
-            "name": "idx_deals_pipeline_id",
-            "definition": "CREATE INDEX idx_deals_pipeline_id ON public.deals USING btree (pipeline_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deals",
-            "name": "idx_deals_responsible_id",
-            "definition": "CREATE INDEX idx_deals_responsible_id ON public.deals USING btree (responsible_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deals",
-            "name": "idx_deals_stage_id",
-            "definition": "CREATE INDEX idx_deals_stage_id ON public.deals USING btree (stage_id)"
-        },
-        {
-            "schema": "public",
-            "table": "deals",
-            "name": "idx_deals_title",
-            "definition": "CREATE INDEX idx_deals_title ON public.deals USING btree (title)"
-        },
-        {
-            "schema": "public",
-            "table": "financial_categories",
-            "name": "financial_categories_pkey",
-            "definition": "CREATE UNIQUE INDEX financial_categories_pkey ON public.financial_categories USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "financial_categories",
-            "name": "idx_financial_categories_archived",
-            "definition": "CREATE INDEX idx_financial_categories_archived ON public.financial_categories USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "payables",
-            "name": "idx_payables_archived",
-            "definition": "CREATE INDEX idx_payables_archived ON public.payables USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "payables",
-            "name": "idx_payables_bank_account_id",
-            "definition": "CREATE INDEX idx_payables_bank_account_id ON public.payables USING btree (bank_account_id)"
-        },
-        {
-            "schema": "public",
-            "table": "payables",
-            "name": "payables_pkey",
-            "definition": "CREATE UNIQUE INDEX payables_pkey ON public.payables USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "pipeline_stages",
-            "name": "idx_pipeline_stages_pipeline_id",
-            "definition": "CREATE INDEX idx_pipeline_stages_pipeline_id ON public.pipeline_stages USING btree (pipeline_id)"
-        },
-        {
-            "schema": "public",
-            "table": "pipeline_stages",
-            "name": "pipeline_stages_pkey",
-            "definition": "CREATE UNIQUE INDEX pipeline_stages_pkey ON public.pipeline_stages USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "pipelines",
-            "name": "pipelines_pkey",
-            "definition": "CREATE UNIQUE INDEX pipelines_pkey ON public.pipelines USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "products",
-            "name": "idx_products_archived",
-            "definition": "CREATE INDEX idx_products_archived ON public.products USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "products",
-            "name": "products_pkey",
-            "definition": "CREATE UNIQUE INDEX products_pkey ON public.products USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "products",
-            "name": "products_sku_unique",
-            "definition": "CREATE UNIQUE INDEX products_sku_unique ON public.products USING btree (sku)"
-        },
-        {
-            "schema": "public",
-            "table": "project_responsibles",
-            "name": "idx_project_responsibles_project_id",
-            "definition": "CREATE INDEX idx_project_responsibles_project_id ON public.project_responsibles USING btree (project_id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_responsibles",
-            "name": "idx_project_responsibles_user_id",
-            "definition": "CREATE INDEX idx_project_responsibles_user_id ON public.project_responsibles USING btree (user_id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_stages",
-            "name": "project_stages_pkey",
-            "definition": "CREATE UNIQUE INDEX project_stages_pkey ON public.project_stages USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_subtasks",
-            "name": "idx_project_subtasks_archived",
-            "definition": "CREATE INDEX idx_project_subtasks_archived ON public.project_subtasks USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "project_subtasks",
-            "name": "idx_project_subtasks_stage_id",
-            "definition": "CREATE INDEX idx_project_subtasks_stage_id ON public.project_subtasks USING btree (stage_id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_subtasks",
-            "name": "idx_project_subtasks_task_id",
-            "definition": "CREATE INDEX idx_project_subtasks_task_id ON public.project_subtasks USING btree (task_id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_subtasks",
-            "name": "project_subtasks_pkey",
-            "definition": "CREATE UNIQUE INDEX project_subtasks_pkey ON public.project_subtasks USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_tasks",
-            "name": "idx_project_tasks_archived",
-            "definition": "CREATE INDEX idx_project_tasks_archived ON public.project_tasks USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "project_tasks",
-            "name": "idx_project_tasks_project_id",
-            "definition": "CREATE INDEX idx_project_tasks_project_id ON public.project_tasks USING btree (project_id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_tasks",
-            "name": "idx_project_tasks_stage_id",
-            "definition": "CREATE INDEX idx_project_tasks_stage_id ON public.project_tasks USING btree (stage_id)"
-        },
-        {
-            "schema": "public",
-            "table": "project_tasks",
-            "name": "project_tasks_pkey",
-            "definition": "CREATE UNIQUE INDEX project_tasks_pkey ON public.project_tasks USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "projects",
-            "name": "idx_projects_archived",
-            "definition": "CREATE INDEX idx_projects_archived ON public.projects USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "projects",
-            "name": "projects_pkey",
-            "definition": "CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "receivables",
-            "name": "idx_receivables_archived",
-            "definition": "CREATE INDEX idx_receivables_archived ON public.receivables USING btree (archived)"
-        },
-        {
-            "schema": "public",
-            "table": "receivables",
-            "name": "idx_receivables_bank_account_id",
-            "definition": "CREATE INDEX idx_receivables_bank_account_id ON public.receivables USING btree (bank_account_id)"
-        },
-        {
-            "schema": "public",
-            "table": "receivables",
-            "name": "idx_receivables_deal_id",
-            "definition": "CREATE INDEX idx_receivables_deal_id ON public.receivables USING btree (deal_id)"
-        },
-        {
-            "schema": "public",
-            "table": "receivables",
-            "name": "receivables_pkey",
-            "definition": "CREATE UNIQUE INDEX receivables_pkey ON public.receivables USING btree (id)"
-        },
-        {
-            "schema": "public",
-            "table": "users",
-            "name": "users_email_unique",
-            "definition": "CREATE UNIQUE INDEX users_email_unique ON public.users USING btree (email)"
-        },
-        {
-            "schema": "public",
-            "table": "users",
-            "name": "users_google_id_unique",
-            "definition": "CREATE UNIQUE INDEX users_google_id_unique ON public.users USING btree (google_id)"
-        },
-        {
-            "schema": "public",
-            "table": "users",
-            "name": "users_pkey",
-            "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
-        }
-    ]
-}
+      ]
+    },
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "3c5b0d4aa1b15c3bcc6db66f2799b10da86516055b68e86f53113fd1b1705de2"
+    }
+  }

@@ -59,7 +59,11 @@ export async function list(request: FastifyRequest, reply: FastifyReply) {
     const offset = paginationOffset(pagination);
 
     const conditions: SQL[] = [];
-    if ((request.query as any).includeArchived !== "true") conditions.push(notArchived(contacts));
+    const includeArchived = (request.query as any).includeArchived === "true";
+    const emailLookup = Boolean(query.email);
+    if (!includeArchived && !emailLookup) {
+      conditions.push(notArchived(contacts));
+    }
 
     conditions.push(
       ...buildFilters(query as Record<string, unknown>, [
@@ -74,9 +78,14 @@ export async function list(request: FastifyRequest, reply: FastifyReply) {
     );
     if (searchSql) conditions.push(searchSql);
 
+    if (query.email) {
+      const norm = query.email.trim().toLowerCase();
+      conditions.push(sql`lower(${contacts.email}) = ${norm}`);
+    }
+
     const whereBase = and(...conditions);
 
-    if (query.companyId) {
+    if (query.companyId && !query.email) {
       const whereAll = and(whereBase, eq(contactCompanies.companyId, query.companyId));
 
       const [countRow] = await db
