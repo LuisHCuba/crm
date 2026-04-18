@@ -28,7 +28,10 @@ const emptyToUndefined = (v: unknown) => (v === "" ? undefined : v);
 
 const schema = z.object({
   description: z.string().min(1, "Descrição obrigatória"),
-  companyId: z.string().min(1, "Empresa obrigatória"),
+  companyId: z.preprocess(
+    emptyToUndefined,
+    z.string().uuid().nullable().optional(),
+  ),
   productId: z.preprocess(
     emptyToUndefined,
     z.string().uuid().nullable().optional(),
@@ -60,7 +63,8 @@ export function ContaReceberForm({ open, onClose, receivable }: ContaReceberForm
   const qc = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const companyOptions = useCompanyOptions();
+  const companyOptionsFromHook = useCompanyOptions();
+  const companyOptions = [{ value: "", label: "Nenhuma" }, ...companyOptionsFromHook];
   const productOptionsFromHook = useProductOptions();
   const productOptions = [{ value: "", label: "Nenhum" }, ...productOptionsFromHook];
   const categoryOptions = useCategoryOptions("revenue");
@@ -128,12 +132,13 @@ export function ContaReceberForm({ open, onClose, receivable }: ContaReceberForm
         recurrenceCount: undefined,
       });
     }
-  }, [receivable, reset, companyOptions, productOptionsFromHook, categoryOptions, bankOptions]);
+  }, [receivable, reset, companyOptionsFromHook, productOptionsFromHook, categoryOptions, bankOptions]);
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) => {
       const base = {
         ...data,
+        companyId: data.companyId || null,
         productId: data.productId || null,
         categoryId: data.categoryId || null,
         bankAccountId: data.bankAccountId || null,
@@ -213,14 +218,11 @@ export function ContaReceberForm({ open, onClose, receivable }: ContaReceberForm
           />
 
           <Select
-            label="Empresa"
+            label="Empresa (opcional)"
             options={companyOptions}
-            value={companyId}
-            onChange={(v) => setValue("companyId", v, { shouldValidate: true })}
+            value={companyId ?? ""}
+            onChange={(v) => setValue("companyId", v || undefined, { shouldValidate: true })}
           />
-          {errors.companyId ? (
-            <p className="-mt-3 text-sm text-[var(--color-red)]">{errors.companyId.message}</p>
-          ) : null}
 
           <Select
             label="Produto (opcional)"

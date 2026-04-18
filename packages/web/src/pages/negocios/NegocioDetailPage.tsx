@@ -420,10 +420,6 @@ export function NegocioDetailPage() {
               variant="secondary"
               className="w-full justify-start"
               onClick={async () => {
-                if (!deal.companyId) {
-                  toast.error("Associe uma empresa antes de gerar recebimentos");
-                  return;
-                }
                 const items = await api
                   .get(`/negocios/${deal.id}/itens`)
                   .then((r) => extractData(r));

@@ -9,9 +9,14 @@ const recurrenceType = z.enum([
   "annual",
 ]);
 
+const optionalCompanyId = z.preprocess(
+  (val) => (val === "" || val === undefined ? undefined : val),
+  z.union([z.string().uuid("ID de empresa inválido"), z.null()]).optional(),
+);
+
 export const createContaReceberSchema = z.object({
   description: z.string().min(1, "Descrição obrigatória"),
-  companyId: z.string().uuid("ID de empresa inválido"),
+  companyId: optionalCompanyId,
   productId: z.string().uuid().nullable().optional(),
   value: z.string().min(1, "Valor obrigatório"),
   dueDate: z.string().min(1, "Data de vencimento obrigatória"),
@@ -23,7 +28,7 @@ export const createContaReceberSchema = z.object({
 
 export const updateContaReceberSchema = z.object({
   description: z.string().min(1).optional(),
-  companyId: z.string().uuid().optional(),
+  companyId: optionalCompanyId,
   productId: z.string().uuid().nullable().optional(),
   value: z.string().optional(),
   dueDate: z.string().optional(),
@@ -34,7 +39,7 @@ export const updateContaReceberSchema = z.object({
 
 export const generateContaReceberSchema = z.object({
   dealId: z.string().uuid("ID de negócio inválido"),
-  companyId: z.string().uuid("ID de empresa inválido"),
+  companyId: optionalCompanyId,
   items: z.array(z.object({
     productId: z.string().uuid().nullable().optional(),
     value: z.string().min(1, "Valor obrigatório"),

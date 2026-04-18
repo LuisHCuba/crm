@@ -22,6 +22,13 @@
       "when": 1776029300000,
       "tag": "0002_add_indexes_and_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776029400000,
+      "tag": "0003_receivable_company_nullable",
+      "breakpoints": true
     }
   ]
 }

@@ -17,7 +17,7 @@ import { ContaReceberForm } from "./ContaReceberForm";
 type Receivable = {
   id: string;
   description: string;
-  companyId: string;
+  companyId: string | null;
   value: string;
   parcelLabel: string | null;
   dueDate: string;
@@ -78,7 +78,8 @@ export function ContasReceberPage() {
     {
       key: "companyId",
       header: "Empresa",
-      render: (row): React.ReactNode => companyMap.get(row.companyId) ?? "—",
+      render: (row): React.ReactNode =>
+        row.companyId ? companyMap.get(row.companyId) ?? "—" : "—",
     },
     {
       key: "value",

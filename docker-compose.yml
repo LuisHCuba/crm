@@ -42,6 +42,8 @@ services:
       - crm
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=crm"
+      - "traefik.http.routers.lhcx-web.priority=100"
       - "traefik.http.routers.lhcx-web.rule=Host(`crm.lhcx.tech`)"
       - "traefik.http.routers.lhcx-web.entrypoints=websecure"
       - "traefik.http.routers.lhcx-web.tls.certresolver=leresolver"

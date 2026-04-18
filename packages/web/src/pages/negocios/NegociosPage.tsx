@@ -279,14 +279,9 @@ export function NegociosPage() {
           .flatMap((s) => s.deals)
           .find((d) => d.id === vars.dealId);
 
-        if (!deal?.companyId) {
-          toast.error("Associe uma empresa ao negócio antes de gerar contas a receber");
-          return;
-        }
-
         setReceivablesModal({
           dealId: vars.dealId,
-          companyId: deal.companyId,
+          companyId: deal?.companyId ?? null,
           lineItems,
         });
       }

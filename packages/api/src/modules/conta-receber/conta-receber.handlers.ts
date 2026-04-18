@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { and, eq, count, sql, type InferInsertModel } from "drizzle-orm";
 import { db } from "../../db/connection";
-import { receivables } from "../../db/schema";
+import { deals, receivables } from "../../db/schema";
 import { logAudit, logChanges } from "../../lib/audit";
 import { handleError } from "../../lib/errors";
 import { buildFilters } from "../../lib/filters";
@@ -122,9 +122,13 @@ export async function create(
   }
 
   const { recurrence, recurrenceCount, ...baseData } = parsed.data;
+  const rowValues = {
+    ...baseData,
+    companyId: baseData.companyId ?? null,
+  };
 
   if (recurrence === "none" || !recurrenceCount) {
-    const [inserted] = await db.insert(receivables).values(baseData).returning();
+    const [inserted] = await db.insert(receivables).values(rowValues).returning();
     await logAudit({
       userId: user.id,
       objectType: "receivable",
@@ -140,7 +144,7 @@ export async function create(
 
   for (let i = 0; i < recurrenceCount; i++) {
     records.push({
-      ...baseData,
+      ...rowValues,
       dueDate: i === 0 ? baseData.dueDate : addMonths(baseData.dueDate, months * i),
     });
   }
@@ -179,7 +183,16 @@ export async function generate(
     return reply.status(400).send({ error: "Validation", issues: parsed.error.issues });
   }
 
-  const { dealId, companyId, items } = parsed.data;
+  const { dealId, companyId: bodyCompanyId, items } = parsed.data;
+
+  const dealRow = await db.query.deals.findFirst({
+    where: and(eq(deals.id, dealId), notArchived(deals)),
+  });
+  if (!dealRow) {
+    return reply.status(404).send({ error: "NOT_FOUND", message: "Negócio não encontrado" });
+  }
+
+  const companyId = bodyCompanyId ?? dealRow.companyId ?? null;
   const allCreated: any[] = [];
 
   for (const item of items) {

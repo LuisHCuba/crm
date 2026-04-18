@@ -36,9 +36,7 @@ export const bankAccounts = pgTable("bank_accounts", {
 export const receivables = pgTable("receivables", {
   ...baseColumns,
   description: text("description").notNull(),
-  companyId: uuid("company_id")
-    .notNull()
-    .references(() => companies.id),
+  companyId: uuid("company_id").references(() => companies.id),
   dealId: uuid("deal_id").references(() => deals.id),
   productId: uuid("product_id").references(() => products.id),
   parcelGroup: uuid("parcel_group"),
