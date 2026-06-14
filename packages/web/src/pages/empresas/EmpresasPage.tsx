@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Plus, RotateCcw } from "lucide-react";
+import { Plus, RotateCcw, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { api, formatMutationError } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Drawer } from "@/components/ui/Drawer";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { EmpresaForm } from "./EmpresaForm";
 
 type Empresa = {
@@ -48,9 +49,33 @@ const TYPE_LABELS: Record<string, { label: string; variant: "info" | "warning" |
 };
 
 const columns: DataTableColumn<Empresa>[] = [
-  { key: "legalName", header: "Razão social" },
-  { key: "tradeName", header: "Nome fantasia" },
-  { key: "document", header: "CNPJ" },
+  {
+    key: "legalName",
+    header: "Razão social",
+    render: (row) => (
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
+          aria-hidden
+        >
+          <Building2 className="size-4" />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-medium text-[var(--color-text)]">{row.legalName}</span>
+          {row.tradeName ? (
+            <span className="block truncate text-xs text-[var(--color-muted)]">{row.tradeName}</span>
+          ) : null}
+        </span>
+      </div>
+    ),
+  },
+  {
+    key: "document",
+    header: "CNPJ",
+    render: (row) => (
+      <span className="tabular-nums text-[var(--color-muted)]">{row.document || "—"}</span>
+    ),
+  },
   {
     key: "type",
     header: "Tipo",
@@ -59,8 +84,13 @@ const columns: DataTableColumn<Empresa>[] = [
       return t ? <Badge variant={t.variant}>{t.label}</Badge> : row.type;
     },
   },
-  { key: "phone", header: "Telefone" },
-  { key: "responsibleId", header: "Responsável" },
+  {
+    key: "phone",
+    header: "Telefone",
+    render: (row) => (
+      <span className="text-[var(--color-muted)]">{row.phone || "—"}</span>
+    ),
+  },
 ];
 
 export function EmpresasPage() {
@@ -73,13 +103,13 @@ export function EmpresasPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Empresa | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["empresas", { page, search, type, showArchived }],
     queryFn: async () => {
       const params: Record<string, string | number> = { page, perPage: 20 };
       if (search) params.search = search;
       if (type) params.type = type;
-      if (showArchived) (params as any).includeArchived = "true";
+      if (showArchived) params.includeArchived = "true";
       const res = await api.get<{ data: Empresa[]; pagination: PaginationMeta }>("/empresas", { params });
       return res.data;
     },
@@ -103,22 +133,24 @@ export function EmpresasPage() {
     setDrawerOpen(true);
   }
 
-  function openEdit(empresa: Empresa) {
-    setEditing(empresa);
-    setDrawerOpen(true);
-  }
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-[var(--color-text)]">Empresas</h1>
+    <div className="flex flex-col gap-6 p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl font-semibold text-[var(--color-text)] md:text-2xl">Empresas</h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            {pagination
+              ? `${pagination.total} ${pagination.total === 1 ? "empresa cadastrada" : "empresas cadastradas"}`
+              : "Gerencie clientes e fornecedores"}
+          </p>
+        </div>
         <Button onClick={openCreate}>
           <Plus className="size-4" />
           Nova empresa
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
         <Input
           variant="search"
           placeholder="Buscar empresa…"
@@ -127,7 +159,7 @@ export function EmpresasPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="max-w-xs"
+          className="min-w-[14rem] flex-1 sm:max-w-xs"
         />
         <Select
           options={TYPE_OPTIONS}
@@ -136,63 +168,72 @@ export function EmpresasPage() {
             setType(v);
             setPage(1);
           }}
-          className="max-w-[10rem]"
+          className="w-full sm:w-[11rem]"
         />
-        <label className="flex items-center gap-1.5 text-sm text-[var(--color-muted)]">
+        <label className="flex h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-lg)] px-1 text-sm text-[var(--color-muted)]">
           <input
             type="checkbox"
             checked={showArchived}
             onChange={(e) => { setShowArchived(e.target.checked); setPage(1); }}
-            className="accent-[var(--color-accent)]"
+            className="size-4 accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
           />
           Mostrar arquivados
         </label>
       </div>
 
-      <DataTable
-        columns={[
-          ...columns,
-          ...(showArchived ? [{
-            key: "__archived" as keyof Empresa,
-            header: "",
-            render: (row: Empresa) => row.archived ? (
-              <div className="flex items-center gap-2">
-                <Badge variant="neutral">Arquivado</Badge>
-                <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); restoreMutation.mutate(row.id); }}>
-                  <RotateCcw className="size-3.5" /> Restaurar
-                </Button>
-              </div>
-            ) : null,
-          }] : []),
-        ]}
-        data={empresas}
-        loading={isLoading}
-        onRowClick={(row) => navigate(`/empresas/${row.id}`)}
-        getRowKey={(row) => row.id}
-        emptyMessage="Nenhuma empresa encontrada."
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar as empresas."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={[
+            ...columns,
+            ...(showArchived ? [{
+              key: "__archived" as keyof Empresa,
+              header: "",
+              render: (row: Empresa) => row.archived ? (
+                <div className="flex items-center justify-end gap-2">
+                  <Badge variant="neutral">Arquivado</Badge>
+                  <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); restoreMutation.mutate(row.id); }}>
+                    <RotateCcw className="size-3.5" /> Restaurar
+                  </Button>
+                </div>
+              ) : null,
+            }] : []),
+          ]}
+          data={empresas}
+          loading={isLoading}
+          onRowClick={(row) => navigate(`/empresas/${row.id}`)}
+          getRowKey={(row) => row.id}
+          emptyMessage="Nenhuma empresa encontrada."
+        />
+      )}
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Anterior
-          </Button>
+        <div className="flex items-center justify-between gap-2">
           <span className="text-sm text-[var(--color-muted)]">
-            {page} / {pagination.totalPages}
+            Página <span className="font-medium text-[var(--color-text)]">{page}</span> de {pagination.totalPages}
           </span>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={page >= pagination.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Próxima
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
         </div>
       )}
 

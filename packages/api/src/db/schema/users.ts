@@ -12,4 +12,8 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("member"),
   themePreference: text("theme_preference").default("system"),
   sidebarCollapsed: boolean("sidebar_collapsed").default(false),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires", {
+    withTimezone: true,
+  }),
 });

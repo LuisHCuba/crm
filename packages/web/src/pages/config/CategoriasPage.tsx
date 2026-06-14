@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 const TYPE_OPTIONS = [
   { value: "revenue", label: "Receita" },
@@ -93,11 +94,11 @@ function CategoriaDrawer({
       onClose={onClose}
       title={isEdit ? "Editar categoria" : "Nova categoria"}
       footer={
-        <div className="flex justify-between">
+        <div className="flex items-center justify-between gap-2">
           {isEdit ? (
             <Button
               variant="ghost"
-              className="text-[var(--color-red)]"
+              className="text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)]"
               onClick={() => archive.mutate()}
               loading={archive.isPending}
             >
@@ -118,7 +119,7 @@ function CategoriaDrawer({
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Input
           label="Nome"
           {...form.register("name")}
@@ -130,20 +131,18 @@ function CategoriaDrawer({
           value={form.watch("type")}
           onChange={(v) => form.setValue("type", v as "revenue" | "expense")}
         />
-        <div className="flex items-center gap-2">
+        <label
+          htmlFor="cat-active"
+          className="flex items-center gap-2.5 text-sm text-[var(--color-text)]"
+        >
           <input
             type="checkbox"
             id="cat-active"
             {...form.register("active")}
-            className="size-4 rounded border-[var(--color-border)] accent-[var(--color-accent)]"
+            className="size-4 rounded-[var(--radius-xs)] border-[var(--color-border-strong)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
           />
-          <label
-            htmlFor="cat-active"
-            className="text-sm text-[var(--color-text)]"
-          >
-            Ativa
-          </label>
-        </div>
+          Categoria ativa
+        </label>
       </div>
     </Drawer>
   );
@@ -155,7 +154,7 @@ export function CategoriasPage() {
   const [showArchived, setShowArchived] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["categorias-financeiras", { showArchived }],
     queryFn: () =>
       api
@@ -217,12 +216,18 @@ export function CategoriasPage() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">
-          Categorias Financeiras
-        </h1>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold text-[var(--color-text)] sm:text-2xl">
+            Categorias financeiras
+          </h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Organize receitas e despesas em categorias reutilizáveis.
+          </p>
+        </div>
         <Button
+          className="shrink-0"
           onClick={() => {
             setSelected(null);
             setDrawerOpen(true);
@@ -232,29 +237,42 @@ export function CategoriasPage() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <label
+        htmlFor="show-archived-cats"
+        className="inline-flex items-center gap-2.5 text-sm text-[var(--color-muted)]"
+      >
         <input
           type="checkbox"
           id="show-archived-cats"
           checked={showArchived}
           onChange={() => setShowArchived(!showArchived)}
-          className="size-4 accent-[var(--color-accent)]"
+          className="size-4 rounded-[var(--radius-xs)] border-[var(--color-border-strong)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
         />
-        <label htmlFor="show-archived-cats" className="text-sm text-[var(--color-muted)]">
-          Mostrar arquivadas
-        </label>
-      </div>
+        Mostrar arquivadas
+      </label>
 
-      <DataTable
-        columns={columns}
-        data={data ?? []}
-        loading={isLoading}
-        getRowKey={(row) => row.id}
-        onRowClick={(row) => {
-          setSelected(row);
-          setDrawerOpen(true);
-        }}
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar as categorias."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data ?? []}
+          loading={isLoading}
+          getRowKey={(row) => row.id}
+          emptyMessage={
+            showArchived
+              ? "Nenhuma categoria arquivada."
+              : "Nenhuma categoria cadastrada ainda."
+          }
+          onRowClick={(row) => {
+            setSelected(row);
+            setDrawerOpen(true);
+          }}
+        />
+      )}
 
       <CategoriaDrawer
         open={drawerOpen}

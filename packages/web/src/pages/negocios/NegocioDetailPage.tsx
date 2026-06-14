@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { api, extractData, formatMutationError } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { formatUnresolvedId } from "@/lib/reference-labels";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
@@ -122,7 +123,7 @@ export function NegocioDetailPage() {
   const [receivablesModal, setReceivablesModal] = useState<{
     dealId: string;
     companyId: string | null;
-    lineItems: any[];
+    lineItems: LineItem[];
   } | null>(null);
 
   const userOptions = useUserOptions();
@@ -133,8 +134,8 @@ export function NegocioDetailPage() {
       const res = await api.get("/auth/users");
       const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
       return all
-        .filter((u: any) => u.name?.toLowerCase().includes(q.toLowerCase()))
-        .map((u: any) => ({ value: u.id, label: u.name }));
+        .filter((u: { id: string; name: string }) => u.name?.toLowerCase().includes(q.toLowerCase()))
+        .map((u: { id: string; name: string }) => ({ value: u.id, label: u.name }));
     },
     [],
   );
@@ -143,7 +144,7 @@ export function NegocioDetailPage() {
     async (q: string) => {
       const res = await api.get("/empresas", { params: { search: q, perPage: 20 } });
       const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-      return all.map((c: any) => ({
+      return all.map((c: { id: string; tradeName?: string | null; legalName: string }) => ({
         value: c.id,
         label: c.tradeName?.trim() || c.legalName,
       }));
@@ -155,7 +156,7 @@ export function NegocioDetailPage() {
     async (q: string) => {
       const res = await api.get("/contatos", { params: { search: q, perPage: 20 } });
       const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-      return all.map((c: any) => ({ value: c.id, label: c.fullName }));
+      return all.map((c: { id: string; fullName: string }) => ({ value: c.id, label: c.fullName }));
     },
     [],
   );
@@ -168,7 +169,7 @@ export function NegocioDetailPage() {
 
   const stageOptions = usePipelineStageOptions(deal?.pipelineId);
 
-  const { data: pipelineStages } = useQuery<any[]>({
+  const { data: pipelineStages } = useQuery<{ id: string; name: string; type: string }[]>({
     queryKey: ["pipeline-stages-detail", deal?.pipelineId],
     queryFn: () =>
       api.get(`/pipelines/${deal!.pipelineId}`).then((r) => r.data?.stages ?? []),
@@ -208,7 +209,7 @@ export function NegocioDetailPage() {
   });
 
   const productMap = new Map<string, string>(
-    (products ?? []).map((p: any) => [p.id, p.name]),
+    (products ?? []).map((p: { id: string; name: string }) => [p.id, p.name]),
   );
 
   const {
@@ -218,7 +219,7 @@ export function NegocioDetailPage() {
     watch,
     formState: { errors: lineErrors },
   } = useForm({
-    resolver: zodResolver(lineItemSchema) as any,
+    resolver: zodResolver(lineItemSchema) as Resolver<LineItemForm>,
     defaultValues: { productId: "", quantity: 1, unitPrice: "", discountPercent: "0" },
   });
 
@@ -286,10 +287,26 @@ export function NegocioDetailPage() {
   });
 
   if (isLoading) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className="size-8 animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface-hover)]" />
+          <div className="h-7 w-64 animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-hover)]" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[15rem_1fr_17rem]">
+          <div className="h-80 animate-pulse rounded-[var(--radius-xl)] bg-[var(--color-surface-hover)]" />
+          <div className="h-80 animate-pulse rounded-[var(--radius-xl)] bg-[var(--color-surface-hover)]" />
+          <div className="h-80 animate-pulse rounded-[var(--radius-xl)] bg-[var(--color-surface-hover)]" />
+        </div>
+      </div>
+    );
   }
   if (!deal) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Negócio não encontrado.</p>;
+    return (
+      <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-16 text-center text-sm text-[var(--color-muted)]">
+        Negócio não encontrado.
+      </div>
+    );
   }
 
   const responsibleName =
@@ -297,8 +314,10 @@ export function NegocioDetailPage() {
   const companyLabel = deal.company
     ? deal.company.tradeName?.trim() || deal.company.legalName?.trim() || "—"
     : "Sem empresa";
-  const dealProjects = (projectsRaw ?? []).filter((p: any) => p.dealId === id);
-  const productOptions = (products ?? []).map((p: any) => ({
+  const dealProjects = (projectsRaw ?? []).filter(
+    (p: { id: string; dealId?: string | null; title: string; progress?: number | null }) => p.dealId === id,
+  );
+  const productOptions = (products ?? []).map((p: { id: string; name: string }) => ({
     value: p.id,
     label: p.name,
   }));
@@ -314,7 +333,7 @@ export function NegocioDetailPage() {
         </Button>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-bold text-[var(--color-text)]">
+            <h1 className="text-xl font-semibold text-[var(--color-text)]">
               {deal.title}
             </h1>
             <Badge variant={STAGE_VARIANT[deal.stage?.type ?? ""] ?? "neutral"}>
@@ -330,7 +349,7 @@ export function NegocioDetailPage() {
         <aside className="flex flex-col gap-4 lg:self-start">
           {/* Pipeline tracker */}
           {pipelineStages && pipelineStages.length > 0 && (
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+            <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
               <PipelineTracker
                 stages={pipelineStages}
                 currentStageId={deal.stageId}
@@ -339,8 +358,8 @@ export function NegocioDetailPage() {
           )}
 
           {/* Editable properties */}
-          <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-            <div className="text-center">
+          <div className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
+            <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] py-3 text-center">
               <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
                 Valor total
               </span>
@@ -422,7 +441,7 @@ export function NegocioDetailPage() {
               onClick={async () => {
                 const items = await api
                   .get(`/negocios/${deal.id}/itens`)
-                  .then((r) => extractData(r));
+                  .then((r) => extractData<LineItem>(r));
                 setReceivablesModal({
                   dealId: deal.id,
                   companyId: deal.companyId,
@@ -501,8 +520,9 @@ export function NegocioDetailPage() {
                     <button
                       type="button"
                       onClick={() => unlinkContact.mutate(c.id)}
-                      className="hidden text-[var(--color-red)] group-hover:block"
+                      className="rounded-[var(--radius-sm)] p-1 text-[var(--color-danger)] opacity-0 outline-none transition-opacity hover:bg-[var(--color-danger-soft)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] group-hover:opacity-100"
                       title="Desvincular"
+                      aria-label={`Desvincular ${c.name}`}
                     >
                       <Trash2 className="size-3" />
                     </button>
@@ -540,7 +560,7 @@ export function NegocioDetailPage() {
                   >
                     <ShoppingCart className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-text)]">
-                      {productMap.get(li.productId) ?? li.productId.slice(0, 8)}
+                      {productMap.get(li.productId) ?? formatUnresolvedId(li.productId)}
                     </span>
                     <span className="text-xs text-[var(--color-muted)]">
                       {formatCurrency(li.subtotal)}
@@ -548,8 +568,9 @@ export function NegocioDetailPage() {
                     <button
                       type="button"
                       onClick={() => deleteLineItem.mutate(li.id)}
-                      className="hidden text-[var(--color-red)] group-hover:block"
+                      className="rounded-[var(--radius-sm)] p-1 text-[var(--color-danger)] opacity-0 outline-none transition-opacity hover:bg-[var(--color-danger-soft)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] group-hover:opacity-100"
                       title="Remover"
+                      aria-label="Remover item"
                     >
                       <Trash2 className="size-3" />
                     </button>
@@ -565,7 +586,7 @@ export function NegocioDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhuma atividade</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(activitiesRaw ?? []).slice(0, 5).map((a: any) => (
+                {(activitiesRaw ?? []).slice(0, 5).map((a: { id: string; title?: string | null; type: string; createdAt?: string | null }) => (
                   <div key={a.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm">
                     <Activity className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-text)]">
@@ -586,7 +607,7 @@ export function NegocioDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhum projeto</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {dealProjects.map((p: any) => (
+                {dealProjects.map((p) => (
                   <Link
                     key={p.id}
                     to={`/projetos/${p.id}`}
@@ -611,7 +632,7 @@ export function NegocioDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhuma conta</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(receivables ?? []).slice(0, 5).map((r: any) => (
+                {(receivables ?? []).slice(0, 5).map((r: { id: string; parcelLabel?: string | null; description?: string | null; status: string; value: string | number | null }) => (
                   <Link
                     key={r.id}
                     to={`/contas-receber/${r.id}`}
@@ -640,7 +661,7 @@ export function NegocioDetailPage() {
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setAddingItem(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit((data: any) => addLineItem.mutate(data))} loading={addLineItem.isPending}>
+            <Button onClick={handleSubmit((data: LineItemForm) => addLineItem.mutate(data))} loading={addLineItem.isPending}>
               Adicionar
             </Button>
           </div>

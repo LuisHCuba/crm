@@ -1,5 +1,13 @@
 import { useEffect } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import {
+  useForm,
+  useFieldArray,
+  type Resolver,
+  type UseFormRegister,
+  type FieldErrors,
+  type UseFormWatch,
+  type UseFormSetValue,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +24,6 @@ import {
 import {
   SortableContext,
   useSortable,
-  arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -105,10 +112,10 @@ function SortableStageRow({
 }: {
   id: string;
   index: number;
-  register: any;
-  errors: any;
-  watch: any;
-  setValue: any;
+  register: UseFormRegister<FormValues>;
+  errors: FieldErrors<FormValues>;
+  watch: UseFormWatch<FormValues>;
+  setValue: UseFormSetValue<FormValues>;
   onRemove: () => void;
 }) {
   const {
@@ -130,11 +137,12 @@ function SortableStageRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-start gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3"
+      className="flex items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3"
     >
       <button
         type="button"
-        className="mt-2 cursor-grab text-[var(--color-muted)] hover:text-[var(--color-text)]"
+        aria-label="Reordenar etapa"
+        className="mt-2 cursor-grab rounded-[var(--radius-sm)] text-[var(--color-muted)] outline-none transition-colors hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
@@ -163,7 +171,8 @@ function SortableStageRow({
       <button
         type="button"
         onClick={onRemove}
-        className="mt-2 text-[var(--color-red)] hover:opacity-70"
+        aria-label="Remover etapa"
+        className="mt-2 rounded-[var(--radius-sm)] text-[var(--color-danger)] outline-none transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
       >
         <Trash2 className="size-4" />
       </button>
@@ -205,6 +214,7 @@ function ResponsibleMultiSelect({
               type="button"
               onClick={() => onChange(value.filter((id) => id !== uid))}
               aria-label={`Remover ${labelFor(uid)}`}
+              className="rounded-[var(--radius-full)] outline-none transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
             >
               <X className="size-3" />
             </button>
@@ -260,8 +270,8 @@ export function ProjetoForm({ open, onClose, projectId }: Props) {
 
   const isEdit = !!projectId && !!project;
 
-  const form = useForm({
-    resolver: zodResolver(formSchema) as any,
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema) as Resolver<FormValues>,
     defaultValues: {
       title: "",
       description: "",
@@ -439,7 +449,7 @@ export function ProjetoForm({ open, onClose, projectId }: Props) {
           </Button>
           <Button
             loading={isPending}
-            onClick={form.handleSubmit(onSubmit as any, (errors) => {
+            onClick={form.handleSubmit(onSubmit, (errors) => {
               console.error("Validation:", errors);
               toast.error("Corrija os campos");
             })}
@@ -462,7 +472,7 @@ export function ProjetoForm({ open, onClose, projectId }: Props) {
           <textarea
             {...form.register("description")}
             rows={3}
-            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)]"
+            className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-faint)] outline-none transition-[border-color,box-shadow] focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
           />
         </div>
 
@@ -487,7 +497,7 @@ export function ProjetoForm({ open, onClose, projectId }: Props) {
           existing={project?.responsibles ?? []}
         />
         {form.formState.errors.responsibleIds?.message && (
-          <p className="text-sm text-[var(--color-red)]">
+          <p className="text-sm text-[var(--color-danger)]">
             {form.formState.errors.responsibleIds.message}
           </p>
         )}
@@ -510,7 +520,7 @@ export function ProjetoForm({ open, onClose, projectId }: Props) {
             Etapas
           </h3>
           {form.formState.errors.stages?.message && (
-            <p className="mb-2 text-sm text-[var(--color-red)]">
+            <p className="mb-2 text-sm text-[var(--color-danger)]">
               {form.formState.errors.stages.message}
             </p>
           )}

@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/Badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Drawer } from "@/components/ui/Drawer";
 import { Tabs } from "@/components/ui/Tabs";
+import { PropertyField } from "@/components/ui/PropertyField";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ProdutoForm } from "./ProdutoForm";
 
 type Produto = {
@@ -49,7 +51,7 @@ export function ProdutoDetailPage() {
   const [tab, setTab] = useState<Tab>("Negócios");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { data: produto, isLoading } = useQuery({
+  const { data: produto, isLoading, isError, refetch } = useQuery({
     queryKey: ["produto", id],
     queryFn: async () => {
       const res = await api.get<Produto>(`/produtos/${id}`);
@@ -77,42 +79,87 @@ export function ProdutoDetailPage() {
     onError: (e) => toast.error(formatMutationError("Erro ao arquivar produto", e)),
   });
 
+  const backLink = (
+    <Link
+      to="/produtos"
+      aria-label="Voltar para produtos"
+      className="inline-flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-lg)] text-[var(--color-muted)] outline-none transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+    >
+      <ArrowLeft className="size-5" />
+    </Link>
+  );
+
   if (isLoading) {
-    return <div className="p-6 text-[var(--color-muted)]">Carregando…</div>;
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">
+          {backLink}
+          <div className="h-6 w-48 animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-2)]" />
+        </div>
+        <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-xs)]">
+          <div className="h-40 animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface-2)]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">{backLink}</div>
+        <QueryErrorState
+          message="Não foi possível carregar o produto."
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
   }
 
   if (!produto) {
-    return <div className="p-6 text-[var(--color-muted)]">Produto não encontrado.</div>;
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">{backLink}</div>
+        <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-12 text-center text-sm text-[var(--color-muted)]">
+          Produto não encontrado.
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <Link to="/produtos" className="text-[var(--color-muted)] hover:text-[var(--color-text)]">
-          <ArrowLeft className="size-5" />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-[var(--color-text)]">{produto.name}</h1>
-            {produto.sku && (
-              <span className="text-sm text-[var(--color-muted)]">SKU: {produto.sku}</span>
-            )}
+      <div className="flex flex-wrap items-start gap-3">
+        {backLink}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-xl font-semibold text-[var(--color-text)] sm:text-2xl">
+              {produto.name}
+            </h1>
             {produto.active ? (
               <Badge variant="success">Ativo</Badge>
             ) : (
               <Badge variant="danger">Inativo</Badge>
             )}
           </div>
+          {produto.sku && (
+            <span className="text-sm text-[var(--color-muted)]">SKU: {produto.sku}</span>
+          )}
         </div>
-        <Button variant="secondary" onClick={() => setDrawerOpen(true)}>
-          <Pencil className="size-4" /> Editar
-        </Button>
-        <Button variant="danger" onClick={() => archiveMutation.mutate()} loading={archiveMutation.isPending}>
-          <Archive className="size-4" /> Arquivar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setDrawerOpen(true)}>
+            <Pencil className="size-4" /> Editar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => archiveMutation.mutate()}
+            loading={archiveMutation.isPending}
+          >
+            <Archive className="size-4" /> Arquivar
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_16rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18rem]">
         <div className="flex flex-col gap-4">
           <Tabs
             tabs={TABS as unknown as { id: string; label: string }[]}
@@ -120,45 +167,51 @@ export function ProdutoDetailPage() {
             onChange={(id) => setTab(id as Tab)}
           />
 
-          {tab === "Negócios" && (
-            <DataTable
-              columns={dealCols}
-              data={dealsQuery.data ?? []}
-              loading={dealsQuery.isLoading}
-              onRowClick={(r) => navigate(`/negocios/${r.id}`)}
-              getRowKey={(r) => r.id}
-              emptyMessage="Nenhum negócio vinculado."
-            />
-          )}
+          {tab === "Negócios" &&
+            (dealsQuery.isError ? (
+              <QueryErrorState
+                message="Não foi possível carregar os negócios."
+                onRetry={() => dealsQuery.refetch()}
+              />
+            ) : (
+              <DataTable
+                columns={dealCols}
+                data={dealsQuery.data ?? []}
+                loading={dealsQuery.isLoading}
+                onRowClick={(r) => navigate(`/negocios/${r.id}`)}
+                getRowKey={(r) => r.id}
+                emptyMessage="Nenhum negócio vinculado."
+              />
+            ))}
 
           {tab === "Histórico" && id && (
             <AuditHistory objectType="product" recordId={id} />
           )}
         </div>
 
-        <aside className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm lg:self-start">
-          <SideField label="Descrição" value={produto.description} />
-          <SideField
-            label="Preço base"
-            value={Number(produto.basePrice).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-          />
-          <SideField label="Unidade" value={produto.unit} />
-          <SideField label="Criado em" value={new Date(produto.createdAt).toLocaleDateString("pt-BR")} />
+        <aside className="flex flex-col gap-4 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-xs)] lg:self-start">
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">Detalhes</h2>
+          <div className="flex flex-col gap-4">
+            <PropertyField label="Descrição" value={produto.description} />
+            <PropertyField
+              label="Preço base"
+              value={Number(produto.basePrice).toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+            />
+            <PropertyField label="Unidade" value={produto.unit} />
+            <PropertyField
+              label="Criado em"
+              value={new Date(produto.createdAt).toLocaleDateString("pt-BR")}
+            />
+          </div>
         </aside>
       </div>
 
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Editar produto">
         <ProdutoForm produto={produto} onSuccess={() => setDrawerOpen(false)} />
       </Drawer>
-    </div>
-  );
-}
-
-function SideField({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div>
-      <span className="block text-xs text-[var(--color-muted)]">{label}</span>
-      <span className="text-[var(--color-text)]">{value || "—"}</span>
     </div>
   );
 }

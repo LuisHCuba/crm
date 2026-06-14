@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { and, count, eq, gte, lte, isNull, isNotNull, type SQL } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { db } from "../../db/connection";
 import { activities } from "../../db/schema";
 import { logAudit } from "../../lib/audit";
@@ -73,7 +74,7 @@ export async function create(
   }
 }
 
-const linkedFieldMap: Record<string, typeof activities.linkedCompanyId> = {
+const linkedFieldMap: Record<string, AnyPgColumn> = {
   linkedCompanyId: activities.linkedCompanyId,
   linkedContactId: activities.linkedContactId,
   linkedDealId: activities.linkedDealId,

@@ -29,6 +29,13 @@
       "when": 1776029400000,
       "tag": "0003_receivable_company_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781423717124,
+      "tag": "0004_add_password_reset",
+      "breakpoints": true
     }
   ]
 }

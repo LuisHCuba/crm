@@ -18,6 +18,7 @@ import { contaPagarRoutes } from "./modules/conta-pagar/conta-pagar.routes";
 import { atividadeRoutes } from "./modules/atividade/atividade.routes";
 import { auditRoutes } from "./modules/audit/audit.routes";
 import { buscaRoutes } from "./modules/busca/busca.routes";
+import { startScheduledJobs } from "./lib/scheduler";
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "trocar-em-producao") {
   if (process.env.NODE_ENV === "production") {
@@ -70,6 +71,7 @@ const start = async () => {
   try {
     await app.listen({ port: 3000, host: "0.0.0.0" });
     app.log.info("API running on http://0.0.0.0:3000");
+    startScheduledJobs(app.log);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

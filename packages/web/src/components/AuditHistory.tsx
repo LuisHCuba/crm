@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, extractData } from "@/lib/api";
+import { useReferenceLabels } from "@/lib/use-reference-labels";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 
@@ -13,23 +14,20 @@ type AuditRow = {
   newValue: string | null;
 };
 
-type UserRow = { id: string; name: string };
-
 type Props = {
   objectType: string;
   recordId: string;
 };
 
-const ACTION_LABEL: Record<string, string> = {
-  create: "Criação",
-  update: "Atualização",
-  delete: "Exclusão",
-};
-
-const ACTION_VARIANT: Record<string, "success" | "info" | "danger" | "neutral"> = {
+const ACTION_VARIANT: Record<string, "success" | "info" | "danger" | "neutral" | "warning"> = {
+  created: "success",
   create: "success",
+  updated: "info",
   update: "info",
+  archived: "danger",
   delete: "danger",
+  restored: "warning",
+  stage_changed: "info",
 };
 
 function formatDateTime(iso: string): string {
@@ -37,15 +35,7 @@ function formatDateTime(iso: string): string {
 }
 
 export function AuditHistory({ objectType, recordId }: Props) {
-  const { data: users } = useQuery({
-    queryKey: ["audit-users"],
-    queryFn: async () => {
-      const res = await api.get("/auth/users");
-      const list: UserRow[] = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-      return new Map(list.map((u) => [u.id, u.name]));
-    },
-    staleTime: 60_000,
-  });
+  const { resolveValue, formatField, formatAction, userMap } = useReferenceLabels();
 
   const { data, isLoading } = useQuery({
     queryKey: ["audit-log", objectType, recordId],
@@ -59,25 +49,69 @@ export function AuditHistory({ objectType, recordId }: Props) {
     {
       key: "createdAt",
       header: "Data/hora",
-      render: (r) => formatDateTime(r.createdAt),
+      render: (r) => (
+        <span className="whitespace-nowrap text-[var(--color-muted)]">
+          {formatDateTime(r.createdAt)}
+        </span>
+      ),
     },
     {
       key: "userId",
       header: "Usuário",
-      render: (r) => (r.userId && users?.get(r.userId)) || "—",
+      render: (r) =>
+        (r.userId && userMap.get(r.userId)) || (
+          <span className="text-[var(--color-faint)]">—</span>
+        ),
     },
     {
       key: "action",
       header: "Ação",
       render: (r) => (
         <Badge variant={ACTION_VARIANT[r.action] ?? "neutral"}>
-          {ACTION_LABEL[r.action] ?? r.action}
+          {formatAction(r.action)}
         </Badge>
       ),
     },
-    { key: "field", header: "Campo" },
-    { key: "oldValue", header: "Anterior" },
-    { key: "newValue", header: "Novo" },
+    {
+      key: "field",
+      header: "Campo",
+      render: (r) =>
+        r.field ? (
+          <span className="font-medium text-[var(--color-text)]">{formatField(r.field)}</span>
+        ) : (
+          <span className="text-[var(--color-faint)]">—</span>
+        ),
+    },
+    {
+      key: "oldValue",
+      header: "Anterior",
+      render: (r) => {
+        const label = resolveValue(r.field, r.oldValue);
+        if (label === "—") {
+          return <span className="text-[var(--color-faint)]">—</span>;
+        }
+        return (
+          <span className="text-[var(--color-muted)]" title={r.oldValue ?? undefined}>
+            {label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "newValue",
+      header: "Novo",
+      render: (r) => {
+        const label = resolveValue(r.field, r.newValue);
+        if (label === "—") {
+          return <span className="text-[var(--color-faint)]">—</span>;
+        }
+        return (
+          <span className="font-medium text-[var(--color-text)]" title={r.newValue ?? undefined}>
+            {label}
+          </span>
+        );
+      },
+    },
   ];
 
   return (

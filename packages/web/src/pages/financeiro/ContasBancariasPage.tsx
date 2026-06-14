@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ContaBancariaForm } from "./ContaBancariaForm";
 
 type BankAccount = {
@@ -22,7 +23,7 @@ export function ContasBancariasPage() {
   const navigate = useNavigate();
   const [formOpen, setFormOpen] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["contas-bancarias"],
     queryFn: () => api.get("/contas-bancarias").then((r) => extractData(r)),
   });
@@ -62,13 +63,23 @@ export function ContasBancariasPage() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Landmark className="size-6 text-[var(--color-accent)]" />
-          <h1 className="text-xl font-bold text-[var(--color-text)]">
-            Contas bancárias
-          </h1>
+          <span
+            className="flex size-10 items-center justify-center rounded-[var(--radius-full)] bg-[var(--color-accent-soft)]"
+            aria-hidden
+          >
+            <Landmark className="size-5 text-[var(--color-accent)]" />
+          </span>
+          <div>
+            <h1 className="text-xl font-semibold text-[var(--color-text)]">
+              Contas bancárias
+            </h1>
+            <p className="text-xs text-[var(--color-muted)]">
+              Saldos e movimentações das suas contas.
+            </p>
+          </div>
         </div>
         <Button onClick={() => setFormOpen(true)}>
           <Plus className="size-4" />
@@ -76,17 +87,27 @@ export function ContasBancariasPage() {
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={rows}
-        loading={isLoading}
-        onRowClick={(row) => navigate(`/contas-bancarias/${row.id}`)}
-        getRowKey={(row) => row.id}
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Erro ao carregar contas bancárias."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={isLoading}
+          onRowClick={(row) => navigate(`/contas-bancarias/${row.id}`)}
+          getRowKey={(row) => row.id}
+          emptyMessage="Nenhuma conta bancária cadastrada."
+        />
+      )}
 
-      <div className="flex justify-end rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm">
-        <span className="text-[var(--color-muted)]">Total: </span>
-        <span className="ml-2 font-semibold text-[var(--color-accent)]">
+      <div className="flex items-center justify-end gap-2 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-3 text-sm shadow-[var(--shadow-xs)]">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+          Saldo total
+        </span>
+        <span className="text-lg font-semibold text-[var(--color-accent)]">
           {formatCurrency(totalBalance)}
         </span>
       </div>

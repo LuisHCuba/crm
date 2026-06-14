@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ProjetoForm } from "./ProjetoForm";
 
 const STATUS_OPTIONS = [
@@ -57,7 +58,7 @@ export function ProjetosPage() {
   if (statusFilter) params.macroGroup = statusFilter;
   if (responsibleId) params.responsibleId = responsibleId;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["projects", params],
     queryFn: () =>
       api
@@ -72,9 +73,9 @@ export function ProjetosPage() {
       header: "Negócio",
       render: (row) =>
         row.dealId ? (
-          <span className="text-[var(--color-accent)]">Vinculado</span>
+          <Badge variant="accent">Vinculado</Badge>
         ) : (
-          "—"
+          <span className="text-[var(--color-faint)]">—</span>
         ),
     },
     {
@@ -97,9 +98,13 @@ export function ProjetosPage() {
       key: "plannedEndDate",
       header: "Prazo",
       render: (row) =>
-        row.plannedEndDate
-          ? new Date(row.plannedEndDate).toLocaleDateString("pt-BR")
-          : "—",
+        row.plannedEndDate ? (
+          <span className="text-[var(--color-text)]">
+            {new Date(row.plannedEndDate).toLocaleDateString("pt-BR")}
+          </span>
+        ) : (
+          <span className="text-[var(--color-faint)]">—</span>
+        ),
     },
     {
       key: "status",
@@ -113,18 +118,24 @@ export function ProjetosPage() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">
-          Projetos
-        </h1>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl font-semibold text-[var(--color-text)]">
+            Projetos
+          </h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Acompanhe o progresso e os prazos de cada projeto.
+          </p>
+        </div>
         <Button onClick={() => setDrawerOpen(true)}>
           <Plus className="size-4" /> Novo projeto
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
         <Select
+          label="Status"
           options={STATUS_OPTIONS}
           value={statusFilter}
           onChange={setStatusFilter}
@@ -141,13 +152,21 @@ export function ProjetosPage() {
         />
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data ?? []}
-        loading={isLoading}
-        getRowKey={(row) => row.id}
-        onRowClick={(row) => navigate(`/projetos/${row.id}`)}
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar os projetos."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data ?? []}
+          loading={isLoading}
+          getRowKey={(row) => row.id}
+          onRowClick={(row) => navigate(`/projetos/${row.id}`)}
+          emptyMessage="Nenhum projeto encontrado."
+        />
+      )}
 
       <ProjetoForm
         open={drawerOpen}

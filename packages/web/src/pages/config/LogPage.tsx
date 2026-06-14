@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
+import { useReferenceLabels } from "@/lib/use-reference-labels";
 
 const OBJECT_TYPE_OPTIONS = [
   { value: "", label: "Todos" },
@@ -55,6 +57,9 @@ type AuditRow = {
 };
 
 export function LogPage() {
+  const { resolveValue, formatField, formatAction, formatObjectType, resolveRecord } =
+    useReferenceLabels();
+
   const [objectType, setObjectType] = useState("");
   const [action, setAction] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -67,7 +72,7 @@ export function LogPage() {
   if (dateFrom) params.dateFrom = new Date(dateFrom).toISOString();
   if (dateTo) params.dateTo = new Date(dateTo + "T23:59:59").toISOString();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["audit-log", params],
     queryFn: () => api.get("/audit-log", { params }).then((r) => r.data),
   });
@@ -92,16 +97,20 @@ export function LogPage() {
       header: "Usuário",
       render: (row) => row.userName ?? "—",
     },
-    { key: "objectType", header: "Objeto" },
+    {
+      key: "objectType",
+      header: "Objeto",
+      render: (row) => formatObjectType(row.objectType),
+    },
     {
       key: "recordId",
       header: "Registro",
       render: (row) => (
         <span
-          className="cursor-pointer truncate text-[var(--color-accent)]"
+          className="inline-block max-w-[160px] truncate align-bottom text-sm text-[var(--color-text)]"
           title={row.recordId}
         >
-          {row.recordId.slice(0, 8)}…
+          {resolveRecord(row.objectType, row.recordId)}
         </span>
       ),
     },
@@ -110,38 +119,59 @@ export function LogPage() {
       header: "Ação",
       render: (row) => (
         <Badge variant={ACTION_VARIANT[row.action] ?? "neutral"}>
-          {row.action}
+          {formatAction(row.action)}
         </Badge>
       ),
     },
-    { key: "field", header: "Campo", render: (row) => row.field ?? "—" },
+    {
+      key: "field",
+      header: "Campo",
+      render: (row) => (row.field ? formatField(row.field) : "—"),
+    },
     {
       key: "oldValue",
       header: "Anterior",
-      render: (row) => (
-        <span className="max-w-[120px] truncate" title={row.oldValue ?? ""}>
-          {row.oldValue ?? "—"}
-        </span>
-      ),
+      render: (row) => {
+        const label = resolveValue(row.field, row.oldValue);
+        return (
+          <span
+            className="inline-block max-w-[160px] truncate align-bottom text-[var(--color-muted)]"
+            title={row.oldValue ?? ""}
+          >
+            {label}
+          </span>
+        );
+      },
     },
     {
       key: "newValue",
       header: "Novo",
-      render: (row) => (
-        <span className="max-w-[120px] truncate" title={row.newValue ?? ""}>
-          {row.newValue ?? "—"}
-        </span>
-      ),
+      render: (row) => {
+        const label = resolveValue(row.field, row.newValue);
+        return (
+          <span
+            className="inline-block max-w-[160px] truncate align-bottom"
+            title={row.newValue ?? ""}
+          >
+            {label}
+          </span>
+        );
+      },
     },
   ];
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[var(--color-text)]">
-        Log de auditoria
-      </h1>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold text-[var(--color-text)] sm:text-2xl">
+          Log de auditoria
+        </h1>
+        <p className="text-sm text-[var(--color-muted)]">
+          Histórico de alterações realizadas nos registros do sistema.
+        </p>
+      </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
         <Select
           label="Objeto"
           options={OBJECT_TYPE_OPTIONS}
@@ -184,14 +214,22 @@ export function LogPage() {
         />
       </div>
 
-      <DataTable
-        columns={columns}
-        data={rows}
-        loading={isLoading}
-        getRowKey={(row) => row.id}
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar o log de auditoria."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={isLoading}
+          getRowKey={(row) => row.id}
+          emptyMessage="Nenhum registro de auditoria para os filtros selecionados."
+        />
+      )}
 
-      <div className="flex items-center justify-between text-sm text-[var(--color-muted)]">
+      <div className="flex flex-col items-start justify-between gap-3 text-sm text-[var(--color-muted)] sm:flex-row sm:items-center">
         <span>
           Página {pagination.page} de {pagination.totalPages} ({pagination.total}{" "}
           registros)
@@ -201,6 +239,7 @@ export function LogPage() {
             variant="secondary"
             size="sm"
             disabled={page <= 1}
+            aria-label="Página anterior"
             onClick={() => setPage((p) => p - 1)}
           >
             <ChevronLeft className="size-4" />
@@ -209,6 +248,7 @@ export function LogPage() {
             variant="secondary"
             size="sm"
             disabled={page >= pagination.totalPages}
+            aria-label="Próxima página"
             onClick={() => setPage((p) => p + 1)}
           >
             <ChevronRight className="size-4" />

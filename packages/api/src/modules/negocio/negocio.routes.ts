@@ -18,18 +18,18 @@ import {
 export async function negocioRoutes(app: FastifyInstance) {
   const preHandler = [authenticate];
 
-  app.get("/negocios", { preHandler }, list);
-  app.get("/negocios/:id", { preHandler }, getById);
+  app.get<{ Querystring: Record<string, unknown> }>("/negocios", { preHandler }, list);
+  app.get<{ Params: { id: string } }>("/negocios/:id", { preHandler }, getById);
   app.post("/negocios", { preHandler }, create);
-  app.patch("/negocios/:id", { preHandler }, update);
-  app.delete("/negocios/:id", { preHandler }, archive);
-  app.patch("/negocios/:id/restore", { preHandler }, restore);
+  app.patch<{ Params: { id: string } }>("/negocios/:id", { preHandler }, update);
+  app.delete<{ Params: { id: string } }>("/negocios/:id", { preHandler }, archive);
+  app.patch<{ Params: { id: string } }>("/negocios/:id/restore", { preHandler }, restore);
 
-  app.get("/negocios/:id/itens", { preHandler }, listLineItems);
-  app.post("/negocios/:id/itens", { preHandler }, createLineItem);
-  app.patch("/negocios/:id/itens/:itemId", { preHandler }, updateLineItem);
-  app.delete("/negocios/:id/itens/:itemId", { preHandler }, deleteLineItem);
+  app.get<{ Params: { id: string } }>("/negocios/:id/itens", { preHandler }, listLineItems);
+  app.post<{ Params: { id: string } }>("/negocios/:id/itens", { preHandler }, createLineItem);
+  app.patch<{ Params: { id: string; itemId: string } }>("/negocios/:id/itens/:itemId", { preHandler }, updateLineItem);
+  app.delete<{ Params: { id: string; itemId: string } }>("/negocios/:id/itens/:itemId", { preHandler }, deleteLineItem);
 
-  app.post("/negocios/:id/contatos", { preHandler }, linkContact);
-  app.delete("/negocios/:id/contatos/:contactId", { preHandler }, unlinkContact);
+  app.post<{ Params: { id: string } }>("/negocios/:id/contatos", { preHandler }, linkContact);
+  app.delete<{ Params: { id: string; contactId: string } }>("/negocios/:id/contatos/:contactId", { preHandler }, unlinkContact);
 }

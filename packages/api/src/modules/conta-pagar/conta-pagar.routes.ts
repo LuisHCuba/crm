@@ -14,12 +14,12 @@ import {
 export async function contaPagarRoutes(app: FastifyInstance) {
   const preHandler = [authenticate];
 
-  app.get("/contas-pagar", { preHandler }, list);
+  app.get<{ Querystring: Record<string, unknown> }>("/contas-pagar", { preHandler }, list);
   app.post("/contas-pagar", { preHandler }, create);
-  app.get("/contas-pagar/:id", { preHandler }, getById);
-  app.patch("/contas-pagar/:id", { preHandler }, update);
-  app.delete("/contas-pagar/:id", { preHandler }, archive);
-  app.patch("/contas-pagar/:id/restore", { preHandler }, restore);
-  app.patch("/contas-pagar/:id/pagar", { preHandler }, pay);
-  app.patch("/contas-pagar/:id/cancelar", { preHandler }, cancel);
+  app.get<{ Params: { id: string } }>("/contas-pagar/:id", { preHandler }, getById);
+  app.patch<{ Params: { id: string } }>("/contas-pagar/:id", { preHandler }, update);
+  app.delete<{ Params: { id: string } }>("/contas-pagar/:id", { preHandler }, archive);
+  app.patch<{ Params: { id: string } }>("/contas-pagar/:id/restore", { preHandler }, restore);
+  app.patch<{ Params: { id: string } }>("/contas-pagar/:id/pagar", { preHandler }, pay);
+  app.patch<{ Params: { id: string } }>("/contas-pagar/:id/cancelar", { preHandler }, cancel);
 }

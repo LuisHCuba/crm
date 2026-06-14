@@ -3,6 +3,7 @@ import { and, eq, count, sql, type InferInsertModel } from "drizzle-orm";
 import { db } from "../../db/connection";
 import { deals, receivables } from "../../db/schema";
 import { logAudit, logChanges } from "../../lib/audit";
+import { dispatchWebhook } from "../../lib/webhooks";
 import { handleError } from "../../lib/errors";
 import { buildFilters } from "../../lib/filters";
 import { parsePagination, paginationOffset, paginationMeta } from "../../lib/pagination";
@@ -400,6 +401,8 @@ export async function receive(
       oldValue: existing.status,
       newValue: "paid",
     });
+
+    dispatchWebhook("recebimento.pago", updated, request.log);
 
     return updated;
   } catch (err) {

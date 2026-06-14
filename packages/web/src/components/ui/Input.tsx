@@ -42,8 +42,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             disabled={disabled}
             className={cn(
-              "w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50",
+              "h-10 w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] shadow-[var(--shadow-xs)] transition-[border-color,box-shadow] duration-150 placeholder:text-[var(--color-faint)] outline-none focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)] disabled:cursor-not-allowed disabled:bg-[var(--color-surface-2)] disabled:opacity-60",
               variant === "search" && "pl-9",
+              error &&
+                "border-[var(--color-danger)] focus-visible:border-[var(--color-danger)] focus-visible:ring-[color-mix(in_srgb,var(--color-danger)_30%,transparent)]",
             )}
             aria-invalid={error ? "true" : "false"}
             aria-describedby={

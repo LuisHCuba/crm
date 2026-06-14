@@ -5,8 +5,9 @@ import * as XLSX from "xlsx";
 import { db } from "../../db/connection";
 import { companies, contactCompanies, contacts, users } from "../../db/schema";
 import { logAudit, logChanges } from "../../lib/audit";
+import { dispatchWebhook } from "../../lib/webhooks";
 import { ConflictError, NotFoundError, handleError } from "../../lib/errors";
-import { buildFilters, searchFilter } from "../../lib/filters";
+import { buildFilters, isQueryTrue, searchFilter } from "../../lib/filters";
 import {
   parsePagination,
   paginationMeta,
@@ -44,6 +45,38 @@ function pickContactAudit(row: Record<string, unknown>) {
   return out;
 }
 
+function listWhereClause(query: Record<string, unknown>): SQL {
+  const parts: SQL[] = [
+    ...buildFilters(query, [
+      { field: contacts.stage, type: "eq", param: "stage" },
+      { field: contacts.responsibleId, type: "eq", param: "responsibleId" },
+    ]),
+  ];
+
+  const search = searchFilter(
+    [contacts.fullName, contacts.email],
+    String(query.search ?? "")
+  );
+  if (search) parts.push(search);
+
+  const emailRaw = query.email;
+  const emailLookup =
+    typeof emailRaw === "string" && emailRaw.trim() !== "";
+  if (emailLookup) {
+    const norm = emailRaw.trim().toLowerCase();
+    parts.push(sql`lower(${contacts.email}) = ${norm}`);
+  }
+
+  if (isQueryTrue(query.archivedOnly)) {
+    parts.unshift(eq(contacts.archived, true));
+  } else if (!isQueryTrue(query.includeArchived) && !emailLookup) {
+    parts.unshift(notArchived(contacts));
+  }
+
+  if (parts.length === 0) return sql`true`;
+  return parts.length === 1 ? parts[0]! : and(...parts)!;
+}
+
 export async function list(request: FastifyRequest, reply: FastifyReply) {
   try {
     const q = listContatosQuerySchema.safeParse(request.query);
@@ -52,38 +85,13 @@ export async function list(request: FastifyRequest, reply: FastifyReply) {
     }
 
     const query = q.data;
-    const pagination = parsePagination({
-      page: query.page,
-      perPage: query.perPage,
-    } as Record<string, unknown>);
+    const pagination = parsePagination(request.query as Record<string, unknown>);
     const offset = paginationOffset(pagination);
 
-    const conditions: SQL[] = [];
-    const includeArchived = (request.query as any).includeArchived === "true";
-    const emailLookup = Boolean(query.email);
-    if (!includeArchived && !emailLookup) {
-      conditions.push(notArchived(contacts));
-    }
-
-    conditions.push(
-      ...buildFilters(query as Record<string, unknown>, [
-        { field: contacts.stage, type: "eq", param: "stage" },
-        { field: contacts.responsibleId, type: "eq", param: "responsibleId" },
-      ])
-    );
-
-    const searchSql = searchFilter(
-      [contacts.fullName, contacts.email],
-      query.search ?? ""
-    );
-    if (searchSql) conditions.push(searchSql);
-
-    if (query.email) {
-      const norm = query.email.trim().toLowerCase();
-      conditions.push(sql`lower(${contacts.email}) = ${norm}`);
-    }
-
-    const whereBase = and(...conditions);
+    const whereBase = listWhereClause({
+      ...(request.query as Record<string, unknown>),
+      ...query,
+    });
 
     if (query.companyId && !query.email) {
       const whereAll = and(whereBase, eq(contactCompanies.companyId, query.companyId));
@@ -203,6 +211,8 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
       recordId: row.id,
       action: "created",
     });
+
+    dispatchWebhook("contato.created", row, request.log);
 
     return reply.status(201).send(row);
   } catch (err) {
@@ -453,7 +463,13 @@ export async function exportContatos(request: FastifyRequest, reply: FastifyRepl
     }
 
     const query = q.data;
-    const conditions: SQL[] = [notArchived(contacts)];
+    const conditions: SQL[] = [];
+
+    if (isQueryTrue(query.archivedOnly)) {
+      conditions.push(eq(contacts.archived, true));
+    } else {
+      conditions.push(notArchived(contacts));
+    }
 
     if (query.scope === "filtered") {
       conditions.push(

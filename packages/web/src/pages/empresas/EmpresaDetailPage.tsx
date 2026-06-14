@@ -11,6 +11,7 @@ import {
   FolderKanban,
   CreditCard,
   Wallet,
+  Building2,
 } from "lucide-react";
 import { api, extractData, formatMutationError } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -20,6 +21,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { AssociationCard } from "@/components/ui/AssociationCard";
 import { EditableField } from "@/components/ui/EditableField";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { AuditHistory } from "@/components/AuditHistory";
 import { useUserOptions } from "@/lib/use-options";
@@ -75,13 +77,13 @@ export function EmpresaDetailPage() {
       const res = await api.get("/auth/users");
       const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
       return all
-        .filter((u: any) => u.name?.toLowerCase().includes(q.toLowerCase()))
-        .map((u: any) => ({ value: u.id, label: u.name }));
+        .filter((u: { id: string; name: string }) => u.name?.toLowerCase().includes(q.toLowerCase()))
+        .map((u: { id: string; name: string }) => ({ value: u.id, label: u.name }));
     },
     [],
   );
 
-  const { data: empresa, isLoading } = useQuery({
+  const { data: empresa, isLoading, isError, refetch } = useQuery({
     queryKey: ["empresa", id],
     queryFn: () => api.get<Empresa>(`/empresas/${id}`).then((r) => r.data),
     enabled: !!id,
@@ -117,14 +119,14 @@ export function EmpresaDetailPage() {
     enabled: !!id,
   });
 
-  const dealIds = (deals ?? []).map((d: any) => d.id);
+  const dealIds = (deals ?? []).map((d: { id: string }) => d.id);
 
   const { data: projectsRaw } = useQuery({
     queryKey: ["empresa", id, "projetos", dealIds],
     queryFn: () =>
       api.get("/projetos", { params: { perPage: 100 } }).then((r) => {
         const all = extractData(r);
-        return all.filter((p: any) => p.dealId && dealIds.includes(p.dealId));
+        return all.filter((p: { dealId?: string | null }) => p.dealId && dealIds.includes(p.dealId));
       }),
     enabled: dealIds.length > 0,
   });
@@ -169,10 +171,48 @@ export function EmpresaDetailPage() {
   });
 
   if (isLoading) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="flex flex-col gap-4 p-4 md:p-6" aria-busy="true">
+        <div className="flex items-center gap-3">
+          <div className="size-9 animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface-2)]" />
+          <div className="flex flex-col gap-2">
+            <div className="h-5 w-56 animate-pulse rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]" />
+            <div className="h-3.5 w-32 animate-pulse rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[16rem_1fr_18rem]">
+          <div className="h-80 animate-pulse rounded-[var(--radius-xl)] bg-[var(--color-surface-2)]" />
+          <div className="h-80 animate-pulse rounded-[var(--radius-xl)] bg-[var(--color-surface-2)]" />
+          <div className="hidden h-80 animate-pulse rounded-[var(--radius-xl)] bg-[var(--color-surface-2)] lg:block" />
+        </div>
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="p-4 md:p-6">
+        <QueryErrorState
+          message="Não foi possível carregar a empresa."
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
   }
   if (!empresa) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Empresa não encontrada.</p>;
+    return (
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-16 text-center">
+          <span className="flex size-11 items-center justify-center rounded-[var(--radius-full)] bg-[var(--color-surface-2)]" aria-hidden>
+            <Building2 className="size-5 text-[var(--color-muted)]" />
+          </span>
+          <p className="text-sm text-[var(--color-muted)]">Empresa não encontrada.</p>
+          <Button variant="secondary" size="sm" onClick={() => navigate("/empresas")}>
+            <ArrowLeft className="size-4" />
+            Voltar para empresas
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const typeInfo = TYPE_MAP[empresa.type];
@@ -181,26 +221,36 @@ export function EmpresaDetailPage() {
     : "—";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link to="/empresas" className="text-[var(--color-muted)] hover:text-[var(--color-text)]">
+      <div className="flex items-start gap-3">
+        <Link
+          to="/empresas"
+          aria-label="Voltar para empresas"
+          className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-muted)] shadow-[var(--shadow-xs)] outline-none transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+        >
           <ArrowLeft className="size-5" />
         </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-[var(--color-text)]">{empresa.legalName}</h1>
+        <span
+          className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
+          aria-hidden
+        >
+          <Building2 className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl font-semibold text-[var(--color-text)] md:text-2xl">{empresa.legalName}</h1>
             {typeInfo && <Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>}
           </div>
-          <p className="text-sm text-[var(--color-muted)]">{empresa.document}</p>
+          <p className="mt-0.5 text-sm tabular-nums text-[var(--color-muted)]">{empresa.document}</p>
         </div>
       </div>
 
       {/* 3-column grid */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[15rem_1fr_17rem]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[16rem_1fr_18rem]">
         {/* ========== LEFT SIDEBAR ========== */}
         <aside className="flex flex-col gap-4 lg:self-start">
-          <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          <div className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
             <EditableField
               type="text"
               label="Razão social"
@@ -279,14 +329,14 @@ export function EmpresaDetailPage() {
         </div>
 
         {/* ========== RIGHT SIDEBAR ========== */}
-        <aside className="flex flex-col gap-3 lg:self-start">
+        <aside className="flex flex-col gap-4 lg:self-start">
           {/* Card: Contatos */}
           <AssociationCard title="Contatos" count={(contatos ?? []).length}>
             {(contatos ?? []).length === 0 ? (
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhum contato</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(contatos ?? []).slice(0, 5).map((c: any) => (
+                {(contatos ?? []).slice(0, 5).map((c: { id: string; fullName: string }) => (
                   <Link key={c.id} to={`/contatos/${c.id}`} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-[var(--color-accent-soft)]">
                     <Users className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-accent)]">{c.fullName}</span>
@@ -305,7 +355,7 @@ export function EmpresaDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhum negócio</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(deals ?? []).slice(0, 5).map((d: any) => (
+                {(deals ?? []).slice(0, 5).map((d: { id: string; title: string; totalValue?: string | number | null; value?: string | number | null }) => (
                   <Link key={d.id} to={`/negocios/${d.id}`} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-[var(--color-accent-soft)]">
                     <Briefcase className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-accent)]">{d.title}</span>
@@ -322,7 +372,7 @@ export function EmpresaDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhuma atividade</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(activitiesRaw ?? []).slice(0, 5).map((a: any) => (
+                {(activitiesRaw ?? []).slice(0, 5).map((a: { id: string; title?: string | null; type: string; createdAt?: string | null }) => (
                   <div key={a.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm">
                     <Activity className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-text)]">{a.title || a.type}</span>
@@ -339,7 +389,7 @@ export function EmpresaDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhum projeto</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(projectsRaw ?? []).slice(0, 5).map((p: any) => (
+                {(projectsRaw ?? []).slice(0, 5).map((p: { id: string; title: string; progress?: number | null }) => (
                   <Link key={p.id} to={`/projetos/${p.id}`} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--color-accent-soft)]">
                     <FolderKanban className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-accent)]">{p.title}</span>
@@ -356,7 +406,7 @@ export function EmpresaDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhuma conta</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(receivables ?? []).slice(0, 5).map((r: any) => (
+                {(receivables ?? []).slice(0, 5).map((r: { id: string; parcelLabel?: string | null; description?: string | null; status: string; value: string | number | null }) => (
                   <Link key={r.id} to={`/contas-receber/${r.id}`} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-[var(--color-accent-soft)]">
                     <CreditCard className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-text)]">{r.parcelLabel ?? r.description}</span>
@@ -373,7 +423,7 @@ export function EmpresaDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhuma conta</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(payables ?? []).slice(0, 5).map((p: any) => (
+                {(payables ?? []).slice(0, 5).map((p: { id: string; parcelLabel?: string | null; description?: string | null; status: string; value: string | number | null }) => (
                   <Link key={p.id} to={`/contas-pagar/${p.id}`} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-[var(--color-accent-soft)]">
                     <Wallet className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-text)]">{p.parcelLabel ?? p.description}</span>

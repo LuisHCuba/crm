@@ -12,7 +12,6 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Badge } from "@/components/ui/Badge";
 
 const PRIORITY_OPTIONS = [
   { value: "", label: "Nenhuma" },
@@ -113,7 +112,7 @@ function SubtaskRow({
   });
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2">
+    <div className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-2">
       <span className="flex-1 truncate text-sm text-[var(--color-text)]">
         {sub.title}
       </span>
@@ -126,7 +125,7 @@ function SubtaskRow({
       <button
         type="button"
         onClick={() => remove.mutate()}
-        className="text-[var(--color-red)] hover:opacity-70"
+        className="rounded-[var(--radius-sm)] text-[var(--color-danger)] outline-none transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
         aria-label="Remover subtarefa"
       >
         <Trash2 className="size-4" />
@@ -366,7 +365,7 @@ export function TarefaDrawer({
           <textarea
             {...form.register("description")}
             rows={3}
-            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)]"
+            className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-faint)] outline-none transition-[border-color,box-shadow] focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
           />
         </div>
 
@@ -451,7 +450,7 @@ export function TarefaDrawer({
               {activities.slice(0, 10).map((a) => (
                 <div
                   key={a.id}
-                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2"
+                  className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-2"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-[var(--color-text)]">

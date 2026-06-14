@@ -81,8 +81,8 @@ export function ProtectionModal({
         </div>
       }
     >
-      <div className="mb-4 flex items-start gap-3 rounded-lg border border-[color-mix(in_srgb,var(--color-yellow)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-yellow)_8%,transparent)] p-3">
-        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[var(--color-yellow)]" />
+      <div className="mb-4 flex items-start gap-3 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--color-warning)_40%,transparent)] bg-[var(--color-warning-soft)] p-3">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[var(--color-warning)]" />
         <p className="text-sm text-[var(--color-text)]">
           Este negócio possui{" "}
           <strong>{linkedReceivables.length}</strong>{" "}
@@ -91,24 +91,24 @@ export function ProtectionModal({
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-[var(--color-border)]">
+      <div className="overflow-x-auto rounded-[var(--radius-xl)] border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)] text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
               <th className="px-3 py-2">
                 <input
                   type="checkbox"
                   checked={checkedIds.size === linkedReceivables.length && linkedReceivables.length > 0}
                   onChange={toggleAll}
                   aria-label="Selecionar todas"
-                  className="accent-[var(--color-accent)]"
+                  className="size-4 rounded-[var(--radius-xs)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                 />
               </th>
-              <th className="px-3 py-2 font-medium text-[var(--color-muted)]">Descrição</th>
-              <th className="px-3 py-2 font-medium text-[var(--color-muted)]">Valor</th>
-              <th className="px-3 py-2 font-medium text-[var(--color-muted)]">Parcela</th>
-              <th className="px-3 py-2 font-medium text-[var(--color-muted)]">Vencimento</th>
-              <th className="px-3 py-2 font-medium text-[var(--color-muted)]">Status</th>
+              <th className="px-3 py-2 font-medium">Descrição</th>
+              <th className="px-3 py-2 font-medium">Valor</th>
+              <th className="px-3 py-2 font-medium">Parcela</th>
+              <th className="px-3 py-2 font-medium">Vencimento</th>
+              <th className="px-3 py-2 font-medium">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +117,7 @@ export function ProtectionModal({
               return (
                 <tr
                   key={r.id}
-                  className="border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-accent-soft)] transition-colors"
+                  className="border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-surface-hover)]"
                 >
                   <td className="px-3 py-2">
                     <input
@@ -125,7 +125,7 @@ export function ProtectionModal({
                       checked={checkedIds.has(r.id)}
                       onChange={() => toggle(r.id)}
                       aria-label={`Cancelar ${r.description}`}
-                      className="accent-[var(--color-accent)]"
+                      className="size-4 rounded-[var(--radius-xs)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                     />
                   </td>
                   <td className="px-3 py-2 text-[var(--color-text)]">{r.description}</td>

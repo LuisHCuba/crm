@@ -26,14 +26,14 @@ export function AssociationCard({
   return (
     <div
       className={cn(
-        "rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]",
+        "rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-xs)]",
         className,
       )}
     >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)] hover:text-[var(--color-text)]"
+        className="flex w-full items-center gap-2 rounded-t-[var(--radius-xl)] px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)] outline-none transition-colors hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
       >
         {open ? (
           <ChevronDown className="size-3.5 shrink-0" />

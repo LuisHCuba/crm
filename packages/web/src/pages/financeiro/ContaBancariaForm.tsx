@@ -23,7 +23,14 @@ type FormValues = z.infer<typeof schema>;
 type ContaBancariaFormProps = {
   open: boolean;
   onClose: () => void;
-  bankAccount?: any;
+  bankAccount?: {
+    id: string;
+    name?: string | null;
+    bankName?: string | null;
+    branchAccount?: string | null;
+    initialBalance?: string | null;
+    active?: boolean | null;
+  };
 };
 
 export function ContaBancariaForm({ open, onClose, bankAccount }: ContaBancariaFormProps) {
@@ -141,15 +148,18 @@ export function ContaBancariaForm({ open, onClose, bankAccount }: ContaBancariaF
             type="button"
             role="switch"
             aria-checked={active}
+            aria-label="Conta ativa"
             onClick={() => setValue("active", !active)}
             className={cn(
-              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-              active ? "bg-[var(--color-accent)]" : "bg-[var(--color-muted)]/30",
+              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-[var(--radius-full)] border-2 border-transparent outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
+              active
+                ? "bg-[var(--color-accent)]"
+                : "bg-[color-mix(in_srgb,var(--color-muted)_30%,transparent)]",
             )}
           >
             <span
               className={cn(
-                "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm transition-transform",
+                "pointer-events-none inline-block size-5 rounded-[var(--radius-full)] bg-[var(--color-accent-contrast)] shadow-[var(--shadow-xs)] transition-transform",
                 active ? "translate-x-5" : "translate-x-0",
               )}
             />

@@ -110,46 +110,68 @@ export function EmpresaForm({ empresa, onSuccess }: EmpresaFormProps) {
     <form
       onSubmit={handleSubmit(
         (v) => mutation.mutate(v),
-        (errors) => {
+        () => {
           toast.error("Corrija os campos");
         },
       )}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-5"
     >
-      <Input label="Razão social" {...register("legalName")} error={errors.legalName?.message} />
-      <Input label="Nome fantasia" {...register("tradeName")} error={errors.tradeName?.message} />
-      <Input label="CNPJ / CPF" {...register("document")} error={errors.document?.message} />
-      <Input label="Telefone" {...register("phone")} error={errors.phone?.message} />
-      <Input label="E-mail" type="email" {...register("email")} error={errors.email?.message} />
-      <Input label="Endereço" {...register("address")} error={errors.address?.message} />
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+          Identificação
+        </legend>
+        <Input label="Razão social" {...register("legalName")} error={errors.legalName?.message} />
+        <Input label="Nome fantasia" {...register("tradeName")} error={errors.tradeName?.message} />
+        <Input label="CNPJ / CPF" {...register("document")} error={errors.document?.message} />
+      </fieldset>
 
-      <Controller
-        control={control}
-        name="type"
-        render={({ field }) => (
+      <fieldset className="flex flex-col gap-4 border-t border-[var(--color-border)] pt-5">
+        <legend className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+          Contato
+        </legend>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Telefone" {...register("phone")} error={errors.phone?.message} />
+          <Input label="E-mail" type="email" {...register("email")} error={errors.email?.message} />
+        </div>
+        <Input label="Endereço" {...register("address")} error={errors.address?.message} />
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-4 border-t border-[var(--color-border)] pt-5">
+        <legend className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+          Classificação
+        </legend>
+        <Controller
+          control={control}
+          name="type"
+          render={({ field }) => (
+            <Select
+              label="Tipo"
+              options={TYPE_OPTIONS}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+
+        <div className="flex flex-col gap-1.5">
           <Select
-            label="Tipo"
-            options={TYPE_OPTIONS}
-            value={field.value}
-            onChange={field.onChange}
+            label="Responsável"
+            options={userOptions}
+            value={watch("responsibleId") ?? ""}
+            onChange={(v) => setValue("responsibleId", v, { shouldValidate: true })}
+            placeholder="Selecione…"
           />
-        )}
-      />
+          {errors.responsibleId ? (
+            <p className="text-sm text-[var(--color-danger)]" role="alert">{errors.responsibleId.message}</p>
+          ) : null}
+        </div>
+      </fieldset>
 
-      <Select
-        label="Responsável"
-        options={userOptions}
-        value={watch("responsibleId") ?? ""}
-        onChange={(v) => setValue("responsibleId", v, { shouldValidate: true })}
-        placeholder="Selecione…"
-      />
-      {errors.responsibleId ? (
-        <p className="-mt-2 text-sm text-[var(--color-red)]">{errors.responsibleId.message}</p>
-      ) : null}
-
-      <Button type="submit" loading={mutation.isPending} className="mt-2">
-        {isEdit ? "Salvar alterações" : "Criar empresa"}
-      </Button>
+      <div className="flex justify-end gap-2 border-t border-[var(--color-border)] pt-5">
+        <Button type="submit" loading={mutation.isPending}>
+          {isEdit ? "Salvar alterações" : "Criar empresa"}
+        </Button>
+      </div>
     </form>
   );
 }

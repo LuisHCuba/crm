@@ -60,53 +60,50 @@ export function ExportModal({ open, onClose, currentFilters }: ExportModalProps)
         </div>
       }
     >
-      <div className="flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => setScope("all")}
-          className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
-            scope === "all"
-              ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-text)]"
-              : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]"
-          }`}
-        >
-          <span
-            className={`flex size-4 shrink-0 items-center justify-center rounded-full border-2 ${
-              scope === "all"
-                ? "border-[var(--color-accent)]"
-                : "border-[var(--color-muted)]"
-            }`}
-          >
-            {scope === "all" && (
-              <span className="size-2 rounded-full bg-[var(--color-accent)]" />
-            )}
-          </span>
-          Todos os contatos
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setScope("filtered")}
-          className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
-            scope === "filtered"
-              ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-text)]"
-              : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]"
-          }`}
-        >
-          <span
-            className={`flex size-4 shrink-0 items-center justify-center rounded-full border-2 ${
-              scope === "filtered"
-                ? "border-[var(--color-accent)]"
-                : "border-[var(--color-muted)]"
-            }`}
-          >
-            {scope === "filtered" && (
-              <span className="size-2 rounded-full bg-[var(--color-accent)]" />
-            )}
-          </span>
-          Com filtros atuais
-        </button>
-      </div>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="sr-only">Escopo da exportação</legend>
+        {([
+          { value: "all", title: "Todos os contatos", desc: "Exporta a base completa." },
+          { value: "filtered", title: "Com filtros atuais", desc: "Respeita busca e filtros aplicados na lista." },
+        ] as const).map((opt) => {
+          const selected = scope === opt.value;
+          return (
+            <label
+              key={opt.value}
+              className={`flex cursor-pointer items-start gap-3 rounded-[var(--radius-lg)] border px-4 py-3 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-ring)] has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-[var(--color-bg)] ${
+                selected
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"
+                  : "border-[var(--color-border-strong)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)]"
+              }`}
+            >
+              <input
+                type="radio"
+                name="export-scope"
+                value={opt.value}
+                checked={selected}
+                onChange={() => setScope(opt.value)}
+                className="sr-only"
+              />
+              <span
+                className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[var(--radius-full)] border-2 ${
+                  selected
+                    ? "border-[var(--color-accent)]"
+                    : "border-[var(--color-border-strong)]"
+                }`}
+                aria-hidden
+              >
+                {selected && (
+                  <span className="size-2 rounded-[var(--radius-full)] bg-[var(--color-accent)]" />
+                )}
+              </span>
+              <span className="flex flex-col gap-0.5">
+                <span className="font-medium text-[var(--color-text)]">{opt.title}</span>
+                <span className="text-xs text-[var(--color-muted)]">{opt.desc}</span>
+              </span>
+            </label>
+          );
+        })}
+      </fieldset>
     </Modal>
   );
 }

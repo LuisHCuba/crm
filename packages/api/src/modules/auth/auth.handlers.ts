@@ -1,46 +1,26 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { hash, compare } from "bcrypt";
-import { eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
+import { randomBytes, createHash } from "node:crypto";
 import { db } from "../../db/connection";
 import { users } from "../../db/schema";
+import { sendMail } from "../../lib/mailer";
 import {
-  registerSchema,
   loginSchema,
   updateProfileSchema,
   changePasswordSchema,
-  type RegisterInput,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   type LoginInput,
   type UpdateProfileInput,
   type ChangePasswordInput,
 } from "./auth.schemas";
 
 const SALT_ROUNDS = 10;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
-export async function register(request: FastifyRequest, reply: FastifyReply) {
-  const parsed = registerSchema.safeParse(request.body);
-  if (!parsed.success) {
-    return reply.status(400).send({ error: "Validation", issues: parsed.error.issues });
-  }
-
-  const { name, email, password } = parsed.data;
-
-  const existing = await db.query.users.findFirst({
-    where: eq(users.email, email),
-  });
-  if (existing) {
-    return reply.status(409).send({ error: "Conflict", message: "E-mail já cadastrado" });
-  }
-
-  const passwordHash = await hash(password, SALT_ROUNDS);
-
-  const [user] = await db
-    .insert(users)
-    .values({ name, email, passwordHash })
-    .returning({ id: users.id, name: users.name, email: users.email });
-
-  const token = request.server.jwt.sign({ id: user.id, email: user.email, role: "member" });
-
-  return reply.status(201).send({ user, token });
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 export async function login(request: FastifyRequest, reply: FastifyReply) {
@@ -146,4 +126,82 @@ export async function changePassword(request: FastifyRequest, reply: FastifyRepl
   await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, id));
 
   return { message: "Senha alterada com sucesso" };
+}
+
+export async function forgotPassword(request: FastifyRequest, reply: FastifyReply) {
+  const parsed = forgotPasswordSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return reply.status(400).send({ error: "Validation", issues: parsed.error.issues });
+  }
+
+  const { email } = parsed.data;
+  const genericMessage =
+    "Se o e-mail existir, enviaremos um link de redefinição em instantes.";
+
+  const user = await db.query.users.findFirst({ where: eq(users.email, email) });
+
+  // Não revela se o e-mail existe (evita enumeração de usuários).
+  if (!user || user.archived) {
+    return reply.send({ message: genericMessage });
+  }
+
+  const token = randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+  await db
+    .update(users)
+    .set({ passwordResetToken: hashToken(token), passwordResetExpires: expires })
+    .where(eq(users.id, user.id));
+
+  const appUrl =
+    process.env.APP_URL || process.env.CORS_ORIGIN?.split(",")[0]?.trim() || "";
+  const link = `${appUrl}/redefinir-senha?token=${token}`;
+
+  await sendMail(
+    {
+      to: email,
+      subject: "Redefinição de senha — LHCX CRM",
+      text: `Você solicitou a redefinição de senha. Acesse o link a seguir (válido por 1 hora): ${link}\n\nSe não foi você, ignore este e-mail.`,
+      html: `<p>Você solicitou a redefinição de senha do <strong>LHCX CRM</strong>.</p>
+<p><a href="${link}">Clique aqui para redefinir sua senha</a> (válido por 1 hora).</p>
+<p>Se não foi você, ignore este e-mail.</p>`,
+    },
+    request.log
+  );
+
+  return reply.send({ message: genericMessage });
+}
+
+export async function resetPassword(request: FastifyRequest, reply: FastifyReply) {
+  const parsed = resetPasswordSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return reply.status(400).send({ error: "Validation", issues: parsed.error.issues });
+  }
+
+  const { token, newPassword } = parsed.data;
+
+  const user = await db.query.users.findFirst({
+    where: and(
+      eq(users.passwordResetToken, hashToken(token)),
+      gt(users.passwordResetExpires, new Date())
+    ),
+  });
+
+  if (!user) {
+    return reply
+      .status(400)
+      .send({ error: "INVALID_TOKEN", message: "Token inválido ou expirado" });
+  }
+
+  const newHash = await hash(newPassword, SALT_ROUNDS);
+  await db
+    .update(users)
+    .set({
+      passwordHash: newHash,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    })
+    .where(eq(users.id, user.id));
+
+  return reply.send({ message: "Senha redefinida com sucesso" });
 }

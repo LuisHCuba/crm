@@ -111,31 +111,51 @@ export function ProdutoForm({ produto, onSuccess }: ProdutoFormProps) {
   });
 
   return (
-    <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="flex flex-col gap-4">
-      <Input label="Nome" {...register("name")} error={errors.name?.message} />
-      <Input label="SKU" {...register("sku")} error={errors.sku?.message} />
-      <Input label="Descrição" {...register("description")} error={errors.description?.message} />
-      <Input label="Preço base" {...register("basePrice")} error={errors.basePrice?.message} placeholder="0.00" />
+    <form
+      onSubmit={handleSubmit((v) => mutation.mutate(v))}
+      className="flex flex-col gap-5"
+    >
+      <div className="flex flex-col gap-4">
+        <Input label="Nome" {...register("name")} error={errors.name?.message} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="SKU" {...register("sku")} error={errors.sku?.message} placeholder="Opcional" />
+          <Controller
+            control={control}
+            name="unit"
+            render={({ field }) => (
+              <Select label="Unidade" options={UNIT_OPTIONS} value={field.value} onChange={field.onChange} />
+            )}
+          />
+        </div>
+        <Input
+          label="Descrição"
+          {...register("description")}
+          error={errors.description?.message}
+          placeholder="Opcional"
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input
+            label="Preço base"
+            {...register("basePrice")}
+            error={errors.basePrice?.message}
+            placeholder="0,00"
+            inputMode="decimal"
+          />
+          <Controller
+            control={control}
+            name="active"
+            render={({ field }) => (
+              <Select label="Status" options={ACTIVE_OPTIONS} value={field.value} onChange={field.onChange} />
+            )}
+          />
+        </div>
+      </div>
 
-      <Controller
-        control={control}
-        name="unit"
-        render={({ field }) => (
-          <Select label="Unidade" options={UNIT_OPTIONS} value={field.value} onChange={field.onChange} />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="active"
-        render={({ field }) => (
-          <Select label="Status" options={ACTIVE_OPTIONS} value={field.value} onChange={field.onChange} />
-        )}
-      />
-
-      <Button type="submit" loading={mutation.isPending} className="mt-2">
-        {isEdit ? "Salvar alterações" : "Criar produto"}
-      </Button>
+      <div className="flex justify-end border-t border-[var(--color-border)] pt-4">
+        <Button type="submit" loading={mutation.isPending} className="w-full sm:w-auto">
+          {isEdit ? "Salvar alterações" : "Criar produto"}
+        </Button>
+      </div>
     </form>
   );
 }

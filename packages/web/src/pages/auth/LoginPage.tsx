@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
 import { z } from "zod";
+import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { api } from "@/lib/api";
@@ -63,61 +64,67 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className={cn(
-        "flex min-h-dvh items-center justify-center px-4 py-10",
-        "bg-[var(--color-bg)]",
-      )}
-    >
-      <div
-        className={cn(
-          "w-full max-w-[400px] rounded-2xl border border-[var(--color-border)]",
-          "bg-[var(--color-surface)] p-8 shadow-sm",
-        )}
-      >
-        <h1 className="mb-8 text-center text-2xl font-semibold tracking-tight text-[var(--color-text)]">
-          MeuCRM
-        </h1>
+    <div className="flex min-h-dvh items-center justify-center bg-[var(--color-bg)] px-4 py-10 sm:px-6">
+      <div className="w-full max-w-[400px]">
+        <div className="mb-8 flex flex-col items-center gap-4 text-center">
+          <span className="flex size-12 items-center justify-center rounded-[var(--radius-xl)] bg-[var(--color-accent)] text-[var(--color-accent-contrast)] shadow-[var(--shadow-sm)]">
+            <Building2 className="size-6" aria-hidden />
+          </span>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">
+              CRM-X
+            </h1>
+            <p className="text-sm text-[var(--color-muted)]">
+              Entre na sua conta para continuar
+            </p>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="E-mail"
-            type="email"
-            autoComplete="email"
-            error={errors.email?.message}
-            {...register("email")}
-          />
-          <Input
-            label="Senha"
-            type="password"
-            autoComplete="current-password"
-            error={errors.password?.message}
-            {...register("password")}
-          />
-
-          <Button type="submit" className="w-full" size="lg" loading={isSubmitting}>
-            Entrar
-          </Button>
-        </form>
-
-        <div className="mt-4 text-center">
-          <Link
-            to="/recuperar-senha"
-            className="text-sm font-medium text-[var(--color-accent)] hover:underline"
+        <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+            noValidate
           >
-            Esqueci minha senha
-          </Link>
-        </div>
+            <Input
+              label="E-mail"
+              type="email"
+              autoComplete="email"
+              placeholder="voce@empresa.com"
+              error={errors.email?.message}
+              {...register("email")}
+            />
+            <Input
+              label="Senha"
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              error={errors.password?.message}
+              {...register("password")}
+            />
 
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-[var(--color-border)]" />
-          <span className="text-xs text-[var(--color-muted)]">— ou —</span>
-          <div className="h-px flex-1 bg-[var(--color-border)]" />
-        </div>
+            <Button
+              type="submit"
+              className="mt-2 w-full"
+              size="lg"
+              loading={isSubmitting}
+            >
+              Entrar
+            </Button>
+          </form>
 
-        <Button type="button" variant="secondary" className="w-full" size="lg" disabled>
-          Entrar com Google
-        </Button>
+          <div className="mt-6 flex justify-center border-t border-[var(--color-border)] pt-5">
+            <Link
+              to="/recuperar-senha"
+              className={cn(
+                "rounded-[var(--radius-sm)] px-1 text-sm font-medium text-[var(--color-accent)] transition-colors hover:underline",
+                "outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
+              )}
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

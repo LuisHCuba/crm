@@ -1,5 +1,10 @@
 import { eq, ilike, and, gte, lte, SQL, or } from "drizzle-orm";
 
+/** Query flags chegam como string ("true"), boolean ou number (1). */
+export function isQueryTrue(value: unknown): boolean {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
 type FilterDef = {
   field: any;
   type: "eq" | "ilike" | "gte" | "lte";

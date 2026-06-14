@@ -24,14 +24,14 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-[rgba(8,11,18,0.55)] backdrop-blur-sm" />
         <Dialog.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 flex max-h-[min(90vh,720px)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg outline-none",
+            "fixed left-1/2 top-1/2 z-50 flex max-h-[min(90vh,720px)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-elevated)] shadow-[var(--shadow-xl)] outline-none",
             className,
           )}
         >
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-5 py-4">
             <Dialog.Title className="text-lg font-semibold text-[var(--color-text)]">
               {title}
             </Dialog.Title>
@@ -50,9 +50,9 @@ export function Modal({
               </Button>
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
           {footer ? (
-            <div className="border-t border-[var(--color-border)] p-4">
+            <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)] px-5 py-4">
               {footer}
             </div>
           ) : null}

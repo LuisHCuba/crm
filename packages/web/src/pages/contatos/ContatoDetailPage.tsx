@@ -10,12 +10,14 @@ import {
   Briefcase,
   Activity,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { api, formatMutationError } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { Tabs } from "@/components/ui/Tabs";
 import { AssociationCard } from "@/components/ui/AssociationCard";
 import { EditableField } from "@/components/ui/EditableField";
@@ -90,8 +92,8 @@ export function ContatoDetailPage() {
       const res = await api.get("/auth/users");
       const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
       return all
-        .filter((u: any) => u.name?.toLowerCase().includes(q.toLowerCase()))
-        .map((u: any) => ({ value: u.id, label: u.name }));
+        .filter((u: { id: string; name: string }) => u.name?.toLowerCase().includes(q.toLowerCase()))
+        .map((u: { id: string; name: string }) => ({ value: u.id, label: u.name }));
     },
     [],
   );
@@ -100,7 +102,7 @@ export function ContatoDetailPage() {
     async (q: string) => {
       const res = await api.get("/empresas", { params: { search: q, perPage: 20 } });
       const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-      return all.map((c: any) => ({
+      return all.map((c: { id: string; tradeName?: string | null; legalName: string }) => ({
         value: c.id,
         label: c.tradeName?.trim() || c.legalName,
       }));
@@ -108,7 +110,7 @@ export function ContatoDetailPage() {
     [],
   );
 
-  const { data: contato, isLoading } = useQuery({
+  const { data: contato, isLoading, isError, refetch } = useQuery({
     queryKey: ["contato", id],
     queryFn: () => api.get<Contato>(`/contatos/${id}`).then((r) => r.data),
     enabled: !!id,
@@ -176,10 +178,33 @@ export function ContatoDetailPage() {
   });
 
   if (isLoading) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-24 text-center text-sm text-[var(--color-muted)]">
+        <Loader2 className="size-6 animate-spin text-[var(--color-accent)]" aria-hidden />
+        Carregando contato…
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="py-10">
+        <QueryErrorState
+          message="Não foi possível carregar o contato."
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
   }
   if (!contato) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Contato não encontrado.</p>;
+    return (
+      <div className="flex flex-col items-center gap-4 py-24 text-center">
+        <p className="text-sm text-[var(--color-muted)]">Contato não encontrado.</p>
+        <Button variant="secondary" onClick={() => navigate("/contatos")}>
+          <ArrowLeft className="size-4" />
+          Voltar para contatos
+        </Button>
+      </div>
+    );
   }
 
   const stageInfo = STAGE_MAP[contato.stage];
@@ -190,15 +215,19 @@ export function ContatoDetailPage() {
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to="/contatos" className="text-[var(--color-muted)] hover:text-[var(--color-text)]">
+        <Link
+          to="/contatos"
+          aria-label="Voltar para contatos"
+          className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-lg)] text-[var(--color-muted)] outline-none transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+        >
           <ArrowLeft className="size-5" />
         </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-[var(--color-text)]">{contato.fullName}</h1>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="truncate text-xl font-semibold text-[var(--color-text)]">{contato.fullName}</h1>
             {stageInfo && <Badge variant={stageInfo.variant}>{stageInfo.label}</Badge>}
           </div>
-          <p className="text-sm text-[var(--color-muted)]">{contato.email}</p>
+          <p className="truncate text-sm text-[var(--color-muted)]">{contato.email}</p>
         </div>
       </div>
 
@@ -206,7 +235,7 @@ export function ContatoDetailPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[15rem_1fr_17rem]">
         {/* ========== LEFT SIDEBAR ========== */}
         <aside className="flex flex-col gap-4 lg:self-start">
-          <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          <div className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
             <EditableField
               type="text"
               label="Nome completo"
@@ -309,10 +338,11 @@ export function ContatoDetailPage() {
                     <button
                       type="button"
                       onClick={() => unlinkMutation.mutate(c.id)}
-                      className="hidden text-[var(--color-red)] group-hover:block"
+                      aria-label="Desvincular empresa"
                       title="Desvincular"
+                      className="rounded-[var(--radius-sm)] p-1 text-[var(--color-danger)] opacity-0 outline-none transition-opacity hover:bg-[var(--color-danger-soft)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] group-hover:opacity-100"
                     >
-                      <Trash2 className="size-3" />
+                      <Trash2 className="size-3.5" />
                     </button>
                   </div>
                 ))}
@@ -326,7 +356,7 @@ export function ContatoDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhum negócio</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(deals ?? []).slice(0, 5).map((d: any) => (
+                {(deals ?? []).slice(0, 5).map((d: { id: string; title: string; totalValue?: string | number | null; value?: string | number | null }) => (
                   <Link key={d.id} to={`/negocios/${d.id}`} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-[var(--color-accent-soft)]">
                     <Briefcase className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-accent)]">{d.title}</span>
@@ -343,7 +373,7 @@ export function ContatoDetailPage() {
               <p className="px-2 text-xs text-[var(--color-muted)]">Nenhuma atividade</p>
             ) : (
               <div className="flex flex-col gap-1">
-                {(activitiesRaw ?? []).slice(0, 5).map((a: any) => (
+                {(activitiesRaw ?? []).slice(0, 5).map((a: { id: string; title?: string | null; type: string; createdAt?: string | null }) => (
                   <div key={a.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm">
                     <Activity className="size-3.5 shrink-0 text-[var(--color-muted)]" />
                     <span className="flex-1 truncate text-[var(--color-text)]">{a.title || a.type}</span>

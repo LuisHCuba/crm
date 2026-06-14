@@ -12,6 +12,7 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Drawer } from "@/components/ui/Drawer";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ContatoForm } from "./ContatoForm";
 import { ExportModal } from "./ExportModal";
 import { ImportModal } from "./ImportModal";
@@ -82,7 +83,7 @@ export function ContatosPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["contatos", { page, search: debouncedSearch, stage, companyId, responsibleId, showArchived }],
     queryFn: async () => {
       const params: Record<string, string | number> = { page, perPage: 20 };
@@ -90,7 +91,7 @@ export function ContatosPage() {
       if (stage) params.stage = stage;
       if (companyId) params.companyId = companyId;
       if (responsibleId) params.responsibleId = responsibleId;
-      if (showArchived) (params as any).includeArchived = "true";
+      if (showArchived) params.archivedOnly = "true";
       const res = await api.get<{ data: Contato[]; pagination: PaginationMeta }>("/contatos", { params });
       return res.data;
     },
@@ -115,10 +116,15 @@ export function ContatosPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-[var(--color-text)]">Contatos</h1>
-        <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold text-[var(--color-text)]">Contatos</h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Gerencie sua base de contatos, filtre e mantenha os dados atualizados.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" onClick={() => setExportOpen(true)}>
             <Download className="size-4" />
             Exportar
@@ -134,93 +140,108 @@ export function ContatosPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <Input
-          variant="search"
-          placeholder="Buscar contato…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="max-w-xs"
-        />
-        <Select
-          options={STAGE_OPTIONS}
-          value={stage}
-          onChange={(v) => {
-            setStage(v);
-            setPage(1);
-          }}
-          className="max-w-[12rem]"
-        />
-        <Select
-          label="Empresa"
-          options={[{ value: "", label: "Todas" }, ...companyOpts]}
-          value={companyId}
-          onChange={(v) => {
-            setCompanyId(v);
-            setPage(1);
-          }}
-          placeholder="Todas"
-          className="max-w-[12rem]"
-        />
-        <Select
-          label="Responsável"
-          options={[{ value: "", label: "Todos" }, ...userOpts]}
-          value={responsibleId}
-          onChange={(v) => {
-            setResponsibleId(v);
-            setPage(1);
-          }}
-          placeholder="Todos"
-          className="max-w-[12rem]"
-        />
-        <label className="flex items-center gap-1.5 text-sm text-[var(--color-muted)]">
-          <input
-            type="checkbox"
-            checked={showArchived}
-            onChange={(e) => { setShowArchived(e.target.checked); setPage(1); }}
-            className="accent-[var(--color-accent)]"
+      <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
+        <div className="flex flex-wrap items-end gap-3">
+          <Input
+            variant="search"
+            placeholder="Buscar contato…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full sm:max-w-xs"
           />
-          Mostrar arquivados
-        </label>
+          <Select
+            options={STAGE_OPTIONS}
+            value={stage}
+            onChange={(v) => {
+              setStage(v);
+              setPage(1);
+            }}
+            placeholder="Todos os estágios"
+            className="w-full sm:max-w-[12rem]"
+          />
+          <Select
+            label="Empresa"
+            options={[{ value: "", label: "Todas" }, ...companyOpts]}
+            value={companyId}
+            onChange={(v) => {
+              setCompanyId(v);
+              setPage(1);
+            }}
+            placeholder="Todas"
+            className="w-full sm:max-w-[12rem]"
+          />
+          <Select
+            label="Responsável"
+            options={[{ value: "", label: "Todos" }, ...userOpts]}
+            value={responsibleId}
+            onChange={(v) => {
+              setResponsibleId(v);
+              setPage(1);
+            }}
+            placeholder="Todos"
+            className="w-full sm:max-w-[12rem]"
+          />
+          <label className="flex h-10 cursor-pointer items-center gap-2 text-sm text-[var(--color-muted)]">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => { setShowArchived(e.target.checked); setPage(1); }}
+              className="size-4 rounded-[var(--radius-xs)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+            />
+            Mostrar arquivados
+          </label>
+        </div>
       </div>
 
-      <DataTable
-        columns={[
-          ...columns,
-          ...(showArchived ? [{
-            key: "__archived" as keyof Contato,
-            header: "",
-            render: (row: Contato) => row.archived ? (
-              <div className="flex items-center gap-2">
-                <Badge variant="neutral">Arquivado</Badge>
-                <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); restoreMutation.mutate(row.id); }}>
-                  <RotateCcw className="size-3.5" /> Restaurar
-                </Button>
-              </div>
-            ) : null,
-          }] : []),
-        ]}
-        data={contatos}
-        loading={isLoading}
-        onRowClick={(row) => navigate(`/contatos/${row.id}`)}
-        getRowKey={(row) => row.id}
-        emptyMessage="Nenhum contato encontrado."
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar os contatos."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={[
+            ...columns,
+            ...(showArchived ? [{
+              key: "__archived" as keyof Contato,
+              header: "",
+              render: (row: Contato) => row.archived ? (
+                <div className="flex items-center gap-2">
+                  <Badge variant="neutral">Arquivado</Badge>
+                  <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); restoreMutation.mutate(row.id); }}>
+                    <RotateCcw className="size-3.5" /> Restaurar
+                  </Button>
+                </div>
+              ) : null,
+            }] : []),
+          ]}
+          data={contatos}
+          loading={isLoading}
+          onRowClick={(row) => navigate(`/contatos/${row.id}`)}
+          getRowKey={(row) => row.id}
+          emptyMessage={showArchived ? "Nenhum contato arquivado." : "Nenhum contato encontrado."}
+        />
+      )}
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            Anterior
-          </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm text-[var(--color-muted)]">
-            {page} / {pagination.totalPages}
+            {pagination.total} contato(s)
           </span>
-          <Button variant="secondary" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((p) => p + 1)}>
-            Próxima
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              Anterior
+            </Button>
+            <span className="text-sm text-[var(--color-muted)]">
+              {page} / {pagination.totalPages}
+            </span>
+            <Button variant="secondary" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((p) => p + 1)}>
+              Próxima
+            </Button>
+          </div>
         </div>
       )}
 
@@ -235,7 +256,13 @@ export function ContatosPage() {
       <ExportModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        currentFilters={{ search, stage, companyId, responsibleId }}
+        currentFilters={{
+          search,
+          stage,
+          companyId,
+          responsibleId,
+          ...(showArchived ? { archivedOnly: "true" } : {}),
+        }}
       />
 
       <ImportModal

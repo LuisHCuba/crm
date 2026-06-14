@@ -21,6 +21,7 @@ import {
   receivables,
 } from "../../db/schema";
 import { logAudit, logChanges } from "../../lib/audit";
+import { dispatchWebhook } from "../../lib/webhooks";
 import { handleError } from "../../lib/errors";
 import { buildFilters, searchFilter } from "../../lib/filters";
 import {
@@ -508,6 +509,10 @@ export async function update(
         oldValue: existing.stageId,
         newValue: parsed.data.stageId!,
       });
+
+      if (responseFlags.requiresReceivables) {
+        dispatchWebhook("negocio.won", updated, request.log);
+      }
     }
 
     return reply.send({ ...updated, ...responseFlags });

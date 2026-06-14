@@ -18,24 +18,24 @@ import {
 export async function tarefaRoutes(app: FastifyInstance) {
   const preHandler = [authenticate];
 
-  app.get("/projetos/tarefas", { preHandler }, listAll);
-  app.get("/projetos/minhas-tarefas", { preHandler }, myTasks);
+  app.get<{ Querystring: Record<string, unknown> }>("/projetos/tarefas", { preHandler }, listAll);
+  app.get<{ Querystring: Record<string, unknown> }>("/projetos/minhas-tarefas", { preHandler }, myTasks);
 
-  app.get("/projetos/:projectId/tarefas", { preHandler }, list);
-  app.post("/projetos/:projectId/tarefas", { preHandler }, createTask);
-  app.get("/projetos/:projectId/tarefas/:taskId", { preHandler }, getById);
-  app.patch("/projetos/:projectId/tarefas/:taskId", { preHandler }, updateTask);
-  app.delete("/projetos/:projectId/tarefas/:taskId", { preHandler }, archiveTask);
-  app.patch("/projetos/:projectId/tarefas/:taskId/restore", { preHandler }, restoreTask);
+  app.get<{ Params: { projectId: string }; Querystring: Record<string, unknown> }>("/projetos/:projectId/tarefas", { preHandler }, list);
+  app.post<{ Params: { projectId: string } }>("/projetos/:projectId/tarefas", { preHandler }, createTask);
+  app.get<{ Params: { projectId: string; taskId: string } }>("/projetos/:projectId/tarefas/:taskId", { preHandler }, getById);
+  app.patch<{ Params: { projectId: string; taskId: string } }>("/projetos/:projectId/tarefas/:taskId", { preHandler }, updateTask);
+  app.delete<{ Params: { projectId: string; taskId: string } }>("/projetos/:projectId/tarefas/:taskId", { preHandler }, archiveTask);
+  app.patch<{ Params: { projectId: string; taskId: string } }>("/projetos/:projectId/tarefas/:taskId/restore", { preHandler }, restoreTask);
 
-  app.get("/projetos/:projectId/tarefas/:taskId/subtarefas", { preHandler }, listSubtasks);
-  app.post("/projetos/:projectId/tarefas/:taskId/subtarefas", { preHandler }, createSubtask);
-  app.patch(
+  app.get<{ Params: { projectId: string; taskId: string } }>("/projetos/:projectId/tarefas/:taskId/subtarefas", { preHandler }, listSubtasks);
+  app.post<{ Params: { projectId: string; taskId: string } }>("/projetos/:projectId/tarefas/:taskId/subtarefas", { preHandler }, createSubtask);
+  app.patch<{ Params: { projectId: string; taskId: string; subtaskId: string } }>(
     "/projetos/:projectId/tarefas/:taskId/subtarefas/:subtaskId",
     { preHandler },
     updateSubtask
   );
-  app.delete(
+  app.delete<{ Params: { projectId: string; taskId: string; subtaskId: string } }>(
     "/projetos/:projectId/tarefas/:taskId/subtarefas/:subtaskId",
     { preHandler },
     deleteSubtask

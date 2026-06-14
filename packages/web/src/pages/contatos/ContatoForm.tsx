@@ -111,7 +111,7 @@ export function ContatoForm({ contato, onSuccess }: ContatoFormProps) {
   });
 
   return (
-    <form onSubmit={handleSubmit((v) => mutation.mutate(v), (err) => { toast.error("Corrija os campos em vermelho"); })} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit((v) => mutation.mutate(v), () => { toast.error("Corrija os campos em vermelho"); })} className="flex flex-col gap-4">
       <Input label="Nome completo" {...register("fullName")} error={errors.fullName?.message} />
       <Input label="E-mail" type="email" {...register("email")} error={errors.email?.message} />
       <Input label="Telefone" {...register("phone")} error={errors.phone?.message} />
@@ -151,12 +151,14 @@ export function ContatoForm({ contato, onSuccess }: ContatoFormProps) {
         placeholder="Selecione…"
       />
       {errors.responsibleId ? (
-        <p className="-mt-2 text-sm text-[var(--color-red)]">{errors.responsibleId.message}</p>
+        <p className="-mt-2 text-sm text-[var(--color-danger)]" role="alert">{errors.responsibleId.message}</p>
       ) : null}
 
-      <Button type="submit" loading={mutation.isPending} className="mt-2">
-        {isEdit ? "Salvar alterações" : "Criar contato"}
-      </Button>
+      <div className="mt-2 flex justify-end border-t border-[var(--color-border)] pt-4">
+        <Button type="submit" loading={mutation.isPending} className="w-full sm:w-auto">
+          {isEdit ? "Salvar alterações" : "Criar contato"}
+        </Button>
+      </div>
     </form>
   );
 }

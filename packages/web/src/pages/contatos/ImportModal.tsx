@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, type ChangeEvent, type DragEvent } from "react";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { api, formatMutationError } from "@/lib/api";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -163,22 +163,37 @@ export function ImportModal({ open, onClose, onSuccess }: ImportModalProps) {
       }
     >
       {step === 1 && (
+        <>
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Arraste um arquivo .xlsx ou clique para selecionar"
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-12 transition-colors ${
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              inputRef.current?.click();
+            }
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-[var(--radius-xl)] border-2 border-dashed px-6 py-12 text-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)] ${
             dragOver
               ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"
-              : "border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]"
+              : "border-[var(--color-border-strong)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]"
           }`}
         >
           {uploading ? (
-            <p className="text-sm text-[var(--color-muted)]">Processando arquivo…</p>
+            <>
+              <Loader2 className="size-8 animate-spin text-[var(--color-accent)]" aria-hidden />
+              <p className="text-sm text-[var(--color-muted)]">Processando arquivo…</p>
+            </>
           ) : (
             <>
-              <Upload className="size-8 text-[var(--color-muted)]" />
+              <span className="flex size-12 items-center justify-center rounded-[var(--radius-full)] bg-[var(--color-accent-soft)]" aria-hidden>
+                <Upload className="size-6 text-[var(--color-accent)]" />
+              </span>
               <p className="text-sm text-[var(--color-text)]">
                 Arraste um arquivo <strong>.xlsx</strong> ou clique para selecionar
               </p>
@@ -187,28 +202,30 @@ export function ImportModal({ open, onClose, onSuccess }: ImportModalProps) {
               </p>
             </>
           )}
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".xlsx"
-            onChange={handleFileSelect}
-            className="hidden"
-            aria-label="Selecionar arquivo .xlsx"
-          />
         </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".xlsx"
+          onChange={handleFileSelect}
+          className="hidden"
+          aria-label="Selecionar arquivo .xlsx"
+        />
+        </>
       )}
 
       {step === 2 && (
-        <div className="overflow-x-auto">
+        <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)]">
+          <div className="overflow-x-auto">
           <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-                <th className="px-3 py-2 font-semibold text-[var(--color-text)]">#</th>
-                <th className="px-3 py-2 font-semibold text-[var(--color-text)]">Nome</th>
-                <th className="px-3 py-2 font-semibold text-[var(--color-text)]">E-mail</th>
-                <th className="px-3 py-2 font-semibold text-[var(--color-text)]">Telefone</th>
-                <th className="px-3 py-2 font-semibold text-[var(--color-text)]">Status</th>
-                <th className="px-3 py-2 font-semibold text-[var(--color-text)]">Ação</th>
+              <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                <th className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">#</th>
+                <th className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Nome</th>
+                <th className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">E-mail</th>
+                <th className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Telefone</th>
+                <th className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Status</th>
+                <th className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -259,6 +276,7 @@ export function ImportModal({ open, onClose, onSuccess }: ImportModalProps) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </Modal>

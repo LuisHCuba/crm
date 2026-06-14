@@ -12,7 +12,32 @@ import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ContaReceberForm } from "./ContaReceberForm";
+
+function SummaryCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "warning" | "danger" | "success";
+}) {
+  const toneClass = {
+    warning: "text-[var(--color-warning)]",
+    danger: "text-[var(--color-danger)]",
+    success: "text-[var(--color-success)]",
+  }[tone];
+  return (
+    <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+        {label}
+      </span>
+      <p className={`mt-1 text-lg font-semibold ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
 
 type Receivable = {
   id: string;
@@ -55,7 +80,7 @@ export function ContasReceberPage() {
     onError: (e) => toast.error(formatMutationError("Erro ao restaurar conta", e)),
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["contas-receber", params],
     queryFn: () =>
       api.get("/contas-receber", { params }).then((r) => r.data),
@@ -67,7 +92,7 @@ export function ContasReceberPage() {
   });
 
   const companyMap = new Map(
-    (empresasRaw ?? []).map((e: any) => [e.id, e.tradeName || e.legalName] as const),
+    (empresasRaw ?? []).map((e: { id: string; tradeName?: string | null; legalName: string }) => [e.id, e.tradeName || e.legalName] as const),
   );
 
   const rows: Receivable[] = data?.data ?? [];
@@ -108,13 +133,23 @@ export function ContasReceberPage() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <ArrowDownCircle className="size-6 text-[var(--color-green)]" />
-          <h1 className="text-xl font-bold text-[var(--color-text)]">
-            Contas a receber
-          </h1>
+          <span
+            className="flex size-10 items-center justify-center rounded-[var(--radius-full)] bg-[var(--color-success-soft)]"
+            aria-hidden
+          >
+            <ArrowDownCircle className="size-5 text-[var(--color-success)]" />
+          </span>
+          <div>
+            <h1 className="text-xl font-semibold text-[var(--color-text)]">
+              Contas a receber
+            </h1>
+            <p className="text-xs text-[var(--color-muted)]">
+              Gerencie recebimentos, vencimentos e parcelas.
+            </p>
+          </div>
         </div>
         <Button onClick={() => setFormOpen(true)}>
           <Plus className="size-4" />
@@ -122,7 +157,15 @@ export function ContasReceberPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      {totals && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <SummaryCard label="Pendente" value={formatCurrency(totals.totalPending)} tone="warning" />
+          <SummaryCard label="Vencido" value={formatCurrency(totals.totalOverdue)} tone="danger" />
+          <SummaryCard label="Recebido" value={formatCurrency(totals.totalPaid)} tone="success" />
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
         <Select
           options={STATUS_FILTER_OPTIONS}
           value={statusFilter}
@@ -160,60 +203,45 @@ export function ContasReceberPage() {
           onChange={(e) => setDueDateTo(e.target.value)}
           className="w-40"
         />
-        <label className="flex items-center gap-1.5 text-sm text-[var(--color-muted)]">
+        <label className="flex h-10 items-center gap-2 text-sm text-[var(--color-muted)]">
           <input
             type="checkbox"
             checked={showArchived}
             onChange={(e) => setShowArchived(e.target.checked)}
-            className="accent-[var(--color-accent)]"
+            className="size-4 rounded-[var(--radius-xs)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
           />
           Mostrar arquivados
         </label>
       </div>
 
-      <DataTable
-        columns={[
-          ...columns,
-          ...(showArchived ? [{
-            key: "__archived" as keyof Receivable,
-            header: "",
-            render: (row: Receivable) => row.archived ? (
-              <div className="flex items-center gap-2">
-                <Badge variant="neutral">Arquivado</Badge>
-                <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); restoreMutation.mutate(row.id); }}>
-                  <RotateCcw className="size-3.5" /> Restaurar
-                </Button>
-              </div>
-            ) : null,
-          }] : []),
-        ]}
-        data={rows}
-        loading={isLoading}
-        onRowClick={(row) => navigate(`/contas-receber/${row.id}`)}
-        getRowKey={(row) => row.id}
-      />
-
-      {totals && (
-        <div className="flex flex-wrap gap-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm">
-          <div>
-            <span className="text-[var(--color-muted)]">Pendente: </span>
-            <span className="font-semibold text-[var(--color-yellow)]">
-              {formatCurrency(totals.totalPending)}
-            </span>
-          </div>
-          <div>
-            <span className="text-[var(--color-muted)]">Vencido: </span>
-            <span className="font-semibold text-[var(--color-red)]">
-              {formatCurrency(totals.totalOverdue)}
-            </span>
-          </div>
-          <div>
-            <span className="text-[var(--color-muted)]">Recebido: </span>
-            <span className="font-semibold text-[var(--color-green)]">
-              {formatCurrency(totals.totalPaid)}
-            </span>
-          </div>
-        </div>
+      {isError ? (
+        <QueryErrorState
+          message="Erro ao carregar contas a receber."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={[
+            ...columns,
+            ...(showArchived ? [{
+              key: "__archived" as keyof Receivable,
+              header: "",
+              render: (row: Receivable) => row.archived ? (
+                <div className="flex items-center gap-2">
+                  <Badge variant="neutral">Arquivado</Badge>
+                  <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); restoreMutation.mutate(row.id); }}>
+                    <RotateCcw className="size-3.5" /> Restaurar
+                  </Button>
+                </div>
+              ) : null,
+            }] : []),
+          ]}
+          data={rows}
+          loading={isLoading}
+          onRowClick={(row) => navigate(`/contas-receber/${row.id}`)}
+          getRowKey={(row) => row.id}
+          emptyMessage="Nenhuma conta a receber encontrada."
+        />
       )}
 
       <ContaReceberForm open={formOpen} onClose={() => setFormOpen(false)} />

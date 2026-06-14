@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Drawer } from "@/components/ui/Drawer";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ProdutoForm } from "./ProdutoForm";
 
 type Produto = {
@@ -70,13 +71,13 @@ export function ProdutosPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Produto | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["produtos", { page, search: debouncedSearch, active, showArchived }],
     queryFn: async () => {
       const params: Record<string, string | number> = { page, perPage: 20 };
       if (debouncedSearch) params.search = debouncedSearch;
       if (active) params.active = active;
-      if (showArchived) (params as any).includeArchived = "true";
+      if (showArchived) params.includeArchived = "true";
       const res = await api.get<{ data: Produto[]; pagination: PaginationMeta }>("/produtos", { params });
       return res.data;
     },
@@ -100,17 +101,46 @@ export function ProdutosPage() {
     setDrawerOpen(true);
   }
 
+  const archivedColumn: DataTableColumn<Produto> = {
+    key: "__archived",
+    header: "",
+    render: (row: Produto) =>
+      row.archived ? (
+        <div className="flex items-center justify-end gap-2">
+          <Badge variant="neutral">Arquivado</Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              restoreMutation.mutate(row.id);
+            }}
+          >
+            <RotateCcw className="size-3.5" /> Restaurar
+          </Button>
+        </div>
+      ) : null,
+  };
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-[var(--color-text)]">Produtos</h1>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold text-[var(--color-text)] sm:text-2xl">Produtos</h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Gerencie o catálogo de produtos e serviços.
+            {pagination ? (
+              <span className="text-[var(--color-faint)]"> · {pagination.total} no total</span>
+            ) : null}
+          </p>
+        </div>
         <Button onClick={openCreate}>
           <Plus className="size-4" />
           Novo produto
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)] sm:flex-row sm:flex-wrap sm:items-end">
         <Input
           variant="search"
           placeholder="Buscar produto…"
@@ -119,7 +149,7 @@ export function ProdutosPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="max-w-xs"
+          className="w-full sm:max-w-xs"
         />
         <Select
           options={ACTIVE_OPTIONS}
@@ -128,54 +158,62 @@ export function ProdutosPage() {
             setActive(v);
             setPage(1);
           }}
-          className="max-w-[10rem]"
+          className="w-full sm:max-w-[10rem]"
         />
-        <label className="flex items-center gap-1.5 text-sm text-[var(--color-muted)]">
+        <label className="flex h-10 cursor-pointer select-none items-center gap-2 rounded-[var(--radius-lg)] px-1 text-sm text-[var(--color-muted)] sm:ml-auto">
           <input
             type="checkbox"
             checked={showArchived}
-            onChange={(e) => { setShowArchived(e.target.checked); setPage(1); }}
-            className="accent-[var(--color-accent)]"
+            onChange={(e) => {
+              setShowArchived(e.target.checked);
+              setPage(1);
+            }}
+            className="size-4 rounded-[var(--radius-xs)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
           />
           Mostrar arquivados
         </label>
       </div>
 
-      <DataTable
-        columns={[
-          ...columns,
-          ...(showArchived ? [{
-            key: "__archived" as keyof Produto,
-            header: "",
-            render: (row: Produto) => row.archived ? (
-              <div className="flex items-center gap-2">
-                <Badge variant="neutral">Arquivado</Badge>
-                <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); restoreMutation.mutate(row.id); }}>
-                  <RotateCcw className="size-3.5" /> Restaurar
-                </Button>
-              </div>
-            ) : null,
-          }] : []),
-        ]}
-        data={produtos}
-        loading={isLoading}
-        onRowClick={(row) => navigate(`/produtos/${row.id}`)}
-        getRowKey={(row) => row.id}
-        emptyMessage="Nenhum produto encontrado."
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar os produtos."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <>
+          <DataTable
+            columns={[...columns, ...(showArchived ? [archivedColumn] : [])]}
+            data={produtos}
+            loading={isLoading}
+            onRowClick={(row) => navigate(`/produtos/${row.id}`)}
+            getRowKey={(row) => row.id}
+            emptyMessage="Nenhum produto encontrado."
+          />
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            Anterior
-          </Button>
-          <span className="text-sm text-[var(--color-muted)]">
-            {page} / {pagination.totalPages}
-          </span>
-          <Button variant="secondary" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((p) => p + 1)}>
-            Próxima
-          </Button>
-        </div>
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between gap-2 sm:justify-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-[var(--color-muted)]">
+                Página {page} de {pagination.totalPages}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       <Drawer

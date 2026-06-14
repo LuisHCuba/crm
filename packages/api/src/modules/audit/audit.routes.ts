@@ -5,5 +5,5 @@ import { list } from "./audit.handlers";
 export async function auditRoutes(app: FastifyInstance) {
   const preHandler = [authenticate];
 
-  app.get("/audit-log", { preHandler }, list);
+  app.get<{ Querystring: Record<string, unknown> }>("/audit-log", { preHandler }, list);
 }

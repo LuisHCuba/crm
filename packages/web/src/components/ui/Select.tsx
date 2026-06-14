@@ -58,8 +58,8 @@ export function Select({
         <SelectPrimitive.Trigger
           id={id}
           className={cn(
-            "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-left text-sm text-[var(--color-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50",
-            !value && "text-[var(--color-muted)]",
+            "flex h-10 w-full items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 text-left text-sm text-[var(--color-text)] shadow-[var(--shadow-xs)] transition-[border-color,box-shadow] duration-150 outline-none data-[placeholder]:text-[var(--color-faint)] focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)] disabled:cursor-not-allowed disabled:opacity-60",
+            !value && "text-[var(--color-faint)]",
           )}
         >
           <SelectPrimitive.Value placeholder={placeholder}>
@@ -75,7 +75,7 @@ export function Select({
           <SelectPrimitive.Content
             position="popper"
             sideOffset={4}
-            className="z-[9999] max-h-[min(24rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md"
+            className="z-[9999] max-h-[min(24rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-elevated)] shadow-[var(--shadow-lg)]"
           >
             <SelectPrimitive.ScrollUpButton className="flex h-8 cursor-default items-center justify-center text-[var(--color-muted)]">
               <ChevronUp className="size-4" />
@@ -83,7 +83,7 @@ export function Select({
             <SelectPrimitive.Viewport className="p-1">
               <SelectPrimitive.Item
                 value={CLEAR_VALUE}
-                className="relative flex cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-sm text-[var(--color-muted)] outline-none data-[highlighted]:bg-[var(--color-accent-soft)]"
+                className="relative flex cursor-pointer select-none items-center rounded-[var(--radius-md)] py-2 pl-8 pr-2 text-sm text-[var(--color-muted)] outline-none data-[highlighted]:bg-[var(--color-accent-soft)] data-[highlighted]:text-[var(--color-accent)]"
               >
                 <span className="absolute left-2 flex size-4 items-center justify-center">
                   <SelectPrimitive.ItemIndicator>
@@ -96,7 +96,7 @@ export function Select({
                 <SelectPrimitive.Item
                   key={opt.value}
                   value={opt.value}
-                  className="relative flex cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-sm text-[var(--color-text)] outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-[var(--color-accent-soft)] data-[disabled]:opacity-50"
+                  className="relative flex cursor-pointer select-none items-center rounded-[var(--radius-md)] py-2 pl-8 pr-2 text-sm text-[var(--color-text)] outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-[var(--color-accent-soft)] data-[highlighted]:text-[var(--color-accent)] data-[disabled]:opacity-50"
                 >
                   <span className="absolute left-2 flex size-4 items-center justify-center">
                     <SelectPrimitive.ItemIndicator>

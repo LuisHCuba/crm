@@ -73,17 +73,31 @@ const api = axios.create({
 export default api;
 export { api };
 
-export function extractData<T = any>(res: { data: any }): T[] {
+export type Pagination = {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+};
+
+export function extractData<T = unknown>(res: { data: unknown }): T[] {
   const d = res.data;
-  if (Array.isArray(d)) return d;
-  if (d && Array.isArray(d.data)) return d.data;
+  if (Array.isArray(d)) return d as T[];
+  if (isRecord(d) && Array.isArray(d.data)) return d.data as T[];
   return [];
 }
 
-export function extractPaginated<T = any>(res: { data: any }): { data: T[]; pagination: any } {
+export function extractPaginated<T = unknown>(res: {
+  data: unknown;
+}): { data: T[]; pagination: Pagination | null } {
   const d = res.data;
-  if (d && Array.isArray(d.data)) return { data: d.data, pagination: d.pagination ?? null };
-  if (Array.isArray(d)) return { data: d, pagination: null };
+  if (isRecord(d) && Array.isArray(d.data)) {
+    return {
+      data: d.data as T[],
+      pagination: (d.pagination as Pagination | undefined) ?? null,
+    };
+  }
+  if (Array.isArray(d)) return { data: d as T[], pagination: null };
   return { data: [], pagination: null };
 }
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, RotateCcw, Archive } from "lucide-react";
+import { Plus, RotateCcw, Archive, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Drawer } from "@/components/ui/Drawer";
 import { Modal } from "@/components/ui/Modal";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 type User = {
   id: string;
@@ -37,6 +38,35 @@ const editSchema = z.object({
 type CreateInput = z.infer<typeof createSchema>;
 type EditInput = z.infer<typeof editSchema>;
 
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function UserCell({ user }: { user: User }) {
+  return (
+    <div className="flex items-center gap-3">
+      {user.avatarUrl ? (
+        <img
+          src={user.avatarUrl}
+          alt=""
+          className="size-9 shrink-0 rounded-[var(--radius-full)] object-cover ring-1 ring-inset ring-[var(--color-border)]"
+        />
+      ) : (
+        <span
+          aria-hidden
+          className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-full)] bg-[var(--color-accent-soft)] text-xs font-semibold text-[var(--color-accent)]"
+        >
+          {getInitials(user.name)}
+        </span>
+      )}
+      <span className="font-medium text-[var(--color-text)]">{user.name}</span>
+    </div>
+  );
+}
+
 export function UsuariosPage() {
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
@@ -44,7 +74,7 @@ export function UsuariosPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState<User | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["users-list"],
     queryFn: () => api.get("/auth/users").then((r) => extractData<User>(r)),
   });
@@ -93,12 +123,20 @@ export function UsuariosPage() {
   });
 
   const columns: DataTableColumn<User>[] = [
-    { key: "name", header: "Nome" },
-    { key: "email", header: "E-mail" },
+    { key: "name", header: "Nome", render: (row) => <UserCell user={row} /> },
+    {
+      key: "email",
+      header: "E-mail",
+      render: (row) => <span className="text-[var(--color-muted)]">{row.email}</span>,
+    },
     {
       key: "createdAt",
       header: "Criado em",
-      render: (row) => new Date(row.createdAt).toLocaleDateString("pt-BR"),
+      render: (row) => (
+        <span className="whitespace-nowrap text-[var(--color-muted)]">
+          {new Date(row.createdAt).toLocaleDateString("pt-BR")}
+        </span>
+      ),
     },
     {
       key: "__status",
@@ -124,11 +162,21 @@ export function UsuariosPage() {
       header: "",
       render: (row) =>
         !row.archived ? (
-          <div className="flex gap-1">
-            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}>
-              Editar
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
+            >
+              <Pencil className="size-3.5" /> Editar
             </Button>
-            <Button size="sm" variant="ghost" className="text-[var(--color-red)]" onClick={(e) => { e.stopPropagation(); setConfirmArchive(row); }}>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={`Arquivar ${row.name}`}
+              className="size-8 text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)]"
+              onClick={(e) => { e.stopPropagation(); setConfirmArchive(row); }}
+            >
               <Archive className="size-3.5" />
             </Button>
           </div>
@@ -137,25 +185,47 @@ export function UsuariosPage() {
   ];
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Usuários</h1>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-[var(--color-muted)]">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
-            />
-            Mostrar arquivados
-          </label>
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus className="size-4" /> Novo usuário
-          </Button>
+    <div className="flex flex-col gap-6 p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl font-semibold text-[var(--color-text)] md:text-2xl">Usuários</h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            {data
+              ? `${rows.length} ${rows.length === 1 ? "usuário" : "usuários"}${showArchived ? "" : " ativo" + (rows.length === 1 ? "" : "s")}`
+              : "Gerencie quem acessa o sistema"}
+          </p>
         </div>
+        <Button onClick={() => setFormOpen(true)}>
+          <Plus className="size-4" /> Novo usuário
+        </Button>
       </div>
 
-      <DataTable columns={columns} data={rows} loading={isLoading} emptyMessage="Nenhum usuário cadastrado" />
+      <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
+        <label className="flex h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-lg)] px-1 text-sm text-[var(--color-muted)]">
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={(e) => setShowArchived(e.target.checked)}
+            className="size-4 accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+          />
+          Mostrar arquivados
+        </label>
+      </div>
+
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar os usuários."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={isLoading}
+          getRowKey={(row) => row.id}
+          emptyMessage={showArchived ? "Nenhum usuário encontrado" : "Nenhum usuário ativo. Crie o primeiro."}
+        />
+      )}
 
       <CreateDrawer
         open={formOpen}
@@ -175,7 +245,7 @@ export function UsuariosPage() {
       )}
 
       <Modal open={!!confirmArchive} onOpenChange={() => setConfirmArchive(null)} title="Arquivar usuário">
-        <p className="text-sm">
+        <p className="text-sm text-[var(--color-text)]">
           Tem certeza que deseja arquivar <strong>{confirmArchive?.name}</strong>? O usuário não poderá mais acessar o sistema.
         </p>
         <div className="mt-4 flex justify-end gap-2">
@@ -200,7 +270,7 @@ function CreateDrawer({ open, onClose, onSubmit, loading }: {
     defaultValues: { name: "", email: "", password: "" },
   });
 
-  const submit = (data: any) => {
+  const submit = (data: CreateInput) => {
     onSubmit(data);
     reset();
   };
@@ -238,8 +308,8 @@ function EditDrawer({ open, user, onClose, onSubmit, loading }: {
     defaultValues: { name: user.name, email: user.email, password: "" },
   });
 
-  const submit = (data: any) => {
-    const payload: any = { name: data.name, email: data.email };
+  const submit = (data: EditInput) => {
+    const payload: EditInput = { name: data.name, email: data.email };
     if (data.password && data.password.length > 0) payload.password = data.password;
     onSubmit(payload);
   };

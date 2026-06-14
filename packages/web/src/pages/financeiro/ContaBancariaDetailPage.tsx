@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
+import { Tabs } from "@/components/ui/Tabs";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { AuditHistory } from "@/components/AuditHistory";
 import { ContaBancariaForm } from "./ContaBancariaForm";
 
@@ -41,7 +43,7 @@ export function ContaBancariaDetailPage() {
   const [dateTo, setDateTo] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
-  const { data: account, isLoading: accountLoading } = useQuery({
+  const { data: account, isLoading: accountLoading, isError: accountError, refetch } = useQuery({
     queryKey: ["contas-bancarias", id],
     queryFn: () => api.get(`/contas-bancarias/${id}`).then((r) => r.data),
     enabled: !!id,
@@ -98,8 +100,8 @@ export function ContaBancariaDetailPage() {
           className={cn(
             "font-medium",
             row.type === "entrada"
-              ? "text-[var(--color-green)]"
-              : "text-[var(--color-red)]",
+              ? "text-[var(--color-success)]"
+              : "text-[var(--color-danger)]",
           )}
         >
           {row.type === "entrada" ? "+" : "−"} {formatCurrency(row.value)}
@@ -114,11 +116,23 @@ export function ContaBancariaDetailPage() {
   ];
 
   if (accountLoading) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-[var(--color-muted)]">
+        Carregando…
+      </div>
+    );
+  }
+
+  if (accountError) {
+    return <QueryErrorState message="Erro ao carregar a conta bancária." onRetry={() => refetch()} />;
   }
 
   if (!account) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Conta não encontrada.</p>;
+    return (
+      <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-12 text-center text-sm text-[var(--color-muted)]">
+        Conta não encontrada.
+      </div>
+    );
   }
 
   return (
@@ -129,7 +143,7 @@ export function ContaBancariaDetailPage() {
         </Button>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-bold text-[var(--color-text)]">
+            <h1 className="text-xl font-semibold text-[var(--color-text)]">
               {account.name}
             </h1>
             <Badge variant={account.active ? "success" : "neutral"}>
@@ -159,26 +173,18 @@ export function ContaBancariaDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-[var(--color-border)]">
-        {(["extrato", "historico"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={`pb-2 text-sm font-medium transition-colors ${
-              tab === t
-                ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
-                : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
-            }`}
-          >
-            {t === "extrato" ? "Extrato" : "Histórico"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={[
+          { id: "extrato", label: "Extrato" },
+          { id: "historico", label: "Histórico" },
+        ]}
+        activeTab={tab}
+        onChange={(t) => setTab(t as "extrato" | "historico")}
+      />
 
       {tab === "extrato" && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
             <Input
               label="De"
               type="date"
@@ -207,6 +213,7 @@ export function ContaBancariaDetailPage() {
             data={movements}
             loading={extratoLoading}
             getRowKey={(_, i) => String(i)}
+            emptyMessage="Nenhuma movimentação no período."
           />
         </div>
       )}

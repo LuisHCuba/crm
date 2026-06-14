@@ -44,6 +44,10 @@ export const listContatosQuerySchema = z.object({
   responsibleId: z.string().uuid().optional(),
   search: z.string().optional(),
   email: z.string().email().optional(),
+  /** Legado: inclui arquivados junto com ativos. Preferir archivedOnly. */
+  includeArchived: z.union([z.string(), z.boolean()]).optional(),
+  /** Quando true, retorna somente contatos arquivados. */
+  archivedOnly: z.union([z.string(), z.boolean()]).optional(),
 });
 
 export const contatoIdParamsSchema = z.object({
@@ -61,6 +65,7 @@ export const exportContatosQuerySchema = z.object({
   companyId: z.string().uuid().optional(),
   responsibleId: z.string().uuid().optional(),
   search: z.string().optional(),
+  archivedOnly: z.union([z.string(), z.boolean()]).optional(),
 });
 
 export const importConfirmRowSchema = z.object({

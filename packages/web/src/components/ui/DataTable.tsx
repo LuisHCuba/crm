@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 export type DataTableColumn<T> = {
   key: string;
   header: string;
-  render?: (row: T) => any;
+  render?: (row: T) => ReactNode;
 };
 
 export type DataTableProps<T> = {
@@ -38,19 +38,19 @@ export function DataTable<T extends object>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]",
+        "overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-xs)]",
         className,
       )}
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)]">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   scope="col"
-                  className="px-4 py-3 font-semibold text-[var(--color-text)]"
+                  className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]"
                 >
                   {col.header}
                 </th>
@@ -97,11 +97,10 @@ export function DataTable<T extends object>({
                     key={getRowKey?.(row, index) ?? index}
                     {...interactiveRowProps}
                     className={cn(
-                      "border-b border-[var(--color-border)] last:border-b-0",
+                      "border-b border-[var(--color-border)] transition-colors last:border-b-0",
                       onRowClick &&
-                        "cursor-pointer hover:bg-[var(--color-accent-soft)]",
-                      !onRowClick &&
-                        "hover:bg-[color-mix(in_srgb,var(--color-muted)_8%,transparent)]",
+                        "cursor-pointer hover:bg-[var(--color-accent-soft)] focus-visible:bg-[var(--color-accent-soft)] focus-visible:outline-none",
+                      !onRowClick && "hover:bg-[var(--color-surface-hover)]",
                     )}
                   >
                     {columns.map((col) => (

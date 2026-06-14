@@ -41,7 +41,7 @@ export function Drawer({
         type="button"
         aria-label="Fechar painel"
         className={cn(
-          "absolute inset-0 bg-black/40 transition-opacity duration-200",
+          "absolute inset-0 bg-[rgba(8,11,18,0.55)] backdrop-blur-sm transition-opacity duration-200",
           open ? "opacity-100" : "opacity-0",
         )}
         onClick={onClose}
@@ -51,12 +51,12 @@ export function Drawer({
         aria-modal="true"
         aria-labelledby="drawer-title"
         className={cn(
-          "absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl transition-transform duration-200 ease-out",
+          "absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-xl)] transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "translate-x-full",
           className,
         )}
       >
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+        <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-5 py-4">
           <h2
             id="drawer-title"
             className="text-lg font-semibold text-[var(--color-text)]"
@@ -74,9 +74,9 @@ export function Drawer({
             <X className="size-4" />
           </Button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
         {footer ? (
-          <div className="border-t border-[var(--color-border)] p-4">
+          <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)] px-5 py-4">
             {footer}
           </div>
         ) : null}

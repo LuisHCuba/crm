@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type RefObject } from "react";
 import { Pencil } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -107,7 +107,7 @@ export function EditableField(props: EditableFieldProps) {
         </span>
         {props.type === "select" ? (
           <select
-            ref={inputRef as any}
+            ref={inputRef as RefObject<HTMLSelectElement>}
             value={draft}
             aria-label={label}
             onChange={(e) => {
@@ -119,7 +119,7 @@ export function EditableField(props: EditableFieldProps) {
               }
             }}
             onBlur={cancel}
-            className="w-full rounded border border-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-1 text-sm text-[var(--color-text)] outline-none"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-1 text-sm text-[var(--color-text)] outline-none ring-2 ring-[color-mix(in_srgb,var(--color-ring)_30%,transparent)]"
           >
             <option value="">—</option>
             {props.options.map((opt) => (
@@ -130,7 +130,7 @@ export function EditableField(props: EditableFieldProps) {
           </select>
         ) : (
           <input
-            ref={inputRef as any}
+            ref={inputRef as RefObject<HTMLInputElement>}
             type={props.type}
             value={draft}
             aria-label={label}
@@ -140,7 +140,7 @@ export function EditableField(props: EditableFieldProps) {
               if (e.key === "Enter") save();
               if (e.key === "Escape") cancel();
             }}
-            className="w-full rounded border border-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-1 text-sm text-[var(--color-text)] outline-none"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-1 text-sm text-[var(--color-text)] outline-none ring-2 ring-[color-mix(in_srgb,var(--color-ring)_30%,transparent)]"
           />
         )}
       </div>
@@ -256,10 +256,10 @@ function InlineSearch({
         onKeyDown={(e) => {
           if (e.key === "Escape") onCancel();
         }}
-        className="w-full rounded border border-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-1 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)]"
+        className="w-full rounded-[var(--radius-md)] border border-[var(--color-accent)] bg-[var(--color-surface)] px-1.5 py-1 text-sm text-[var(--color-text)] outline-none ring-2 ring-[color-mix(in_srgb,var(--color-ring)_30%,transparent)] placeholder:text-[var(--color-faint)]"
       />
       {(loading || results.length > 0 || (query.trim() && !loading)) && (
-        <div className="absolute left-0 right-0 z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
+        <div className="absolute left-0 right-0 z-50 mt-1 max-h-40 overflow-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-1 shadow-[var(--shadow-lg)]">
           {loading ? (
             <div className="px-2 py-1.5 text-xs text-[var(--color-muted)]">
               Buscando…
@@ -275,7 +275,7 @@ function InlineSearch({
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onSelect(opt.value)}
-                className="w-full px-2 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]"
+                className="w-full rounded-[var(--radius-md)] px-2 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)]"
               >
                 {opt.label}
               </button>

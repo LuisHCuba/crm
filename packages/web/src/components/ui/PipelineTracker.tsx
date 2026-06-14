@@ -17,11 +17,12 @@ export function PipelineTracker({
   const currentType = stages[currentIdx]?.type;
 
   const colorForStage = (idx: number, type: string) => {
-    if (idx > currentIdx) return "bg-[var(--color-border)]";
+    if (idx > currentIdx)
+      return "bg-[color-mix(in_srgb,var(--color-muted)_22%,transparent)]";
     if (type === "won" || currentType === "won")
-      return "bg-[var(--color-green)]";
+      return "bg-[var(--color-success)]";
     if (type === "lost" || currentType === "lost")
-      return "bg-[var(--color-red)]";
+      return "bg-[var(--color-danger)]";
     return "bg-[var(--color-accent)]";
   };
 
@@ -32,7 +33,7 @@ export function PipelineTracker({
           <div
             key={stage.id}
             className={cn(
-              "h-1.5 flex-1 rounded-full transition-colors",
+              "h-1.5 flex-1 rounded-[var(--radius-full)] transition-colors",
               colorForStage(idx, stage.type),
             )}
             title={stage.name}

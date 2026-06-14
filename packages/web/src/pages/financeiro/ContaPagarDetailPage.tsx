@@ -13,27 +13,15 @@ import {
   useCompanyOptions,
 } from "@/lib/use-options";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { resolveOptionLabel } from "@/lib/reference-labels";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
+import { Tabs } from "@/components/ui/Tabs";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { AuditHistory } from "@/components/AuditHistory";
 import { ContaPagarForm } from "./ContaPagarForm";
-
-const STATUS_VARIANT: Record<string, "warning" | "success" | "danger" | "neutral"> = {
-  pending: "warning",
-  paid: "success",
-  overdue: "danger",
-  cancelled: "neutral",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendente",
-  paid: "Pago",
-  overdue: "Vencido",
-  cancelled: "Cancelado",
-};
 
 const paySchema = z.object({
   paymentDate: z.string().min(1, "Data obrigatória"),
@@ -47,15 +35,12 @@ function InfoField({ label, children }: { label: string; children: React.ReactNo
   if (!children) return null;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-[var(--color-muted)]">{label}</span>
+      <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+        {label}
+      </span>
       <span className="text-sm text-[var(--color-text)]">{children}</span>
     </div>
   );
-}
-
-function resolveLabel(options: { value: string; label: string }[], id: string | null | undefined) {
-  if (!id) return null;
-  return options.find((o) => o.value === id)?.label ?? id;
 }
 
 export function ContaPagarDetailPage() {
@@ -69,7 +54,7 @@ export function ContaPagarDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [tab, setTab] = useState<"info" | "historico">("info");
 
-  const { data: payable, isLoading } = useQuery({
+  const { data: payable, isLoading, isError, refetch } = useQuery({
     queryKey: ["contas-pagar", id],
     queryFn: () => api.get(`/contas-pagar/${id}`).then((r) => r.data),
     enabled: !!id,
@@ -148,11 +133,23 @@ export function ContaPagarDetailPage() {
   });
 
   if (isLoading) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-[var(--color-muted)]">
+        Carregando…
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <QueryErrorState message="Erro ao carregar a conta a pagar." onRetry={() => refetch()} />;
   }
 
   if (!payable) {
-    return <p className="py-20 text-center text-[var(--color-muted)]">Registro não encontrado.</p>;
+    return (
+      <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-12 text-center text-sm text-[var(--color-muted)]">
+        Registro não encontrado.
+      </div>
+    );
   }
 
   const canAct = payable.status === "pending" || payable.status === "overdue";
@@ -173,7 +170,7 @@ export function ContaPagarDetailPage() {
         </Button>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-bold text-[var(--color-text)]">
+            <h1 className="text-xl font-semibold text-[var(--color-text)]">
               {payable.description}
             </h1>
           </div>
@@ -190,12 +187,12 @@ export function ContaPagarDetailPage() {
                     if (!isCurrent && s.key !== "paid") statusMutation.mutate(s.key);
                   }}
                   title={s.key === "paid" && !isCurrent ? "Use o botão 'Pagar' para marcar como pago" : undefined}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
+                  className={`rounded-[var(--radius-full)] border px-3 py-1 text-xs font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)] ${
                     isCurrent
-                      ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white shadow-sm"
+                      ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-accent-contrast)] shadow-[var(--shadow-xs)]"
                       : s.key === "paid"
                         ? "cursor-not-allowed border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] opacity-50"
-                        : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]"
+                        : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]"
                   }`}
                 >
                   {s.label}
@@ -203,8 +200,8 @@ export function ContaPagarDetailPage() {
               );
             })}
           </div>
-          <div className="mt-2 flex flex-wrap gap-4 text-sm text-[var(--color-muted)]">
-            <span className="font-semibold text-[var(--color-accent)]">
+          <div className="mt-2 flex flex-wrap items-baseline gap-4 text-sm text-[var(--color-muted)]">
+            <span className="text-lg font-semibold text-[var(--color-accent)]">
               {formatCurrency(payable.value)}
             </span>
             {payable.parcelLabel && <span>Parcela: {payable.parcelLabel}</span>}
@@ -224,33 +221,25 @@ export function ContaPagarDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-[var(--color-border)]">
-        {(["info", "historico"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={`pb-2 text-sm font-medium transition-colors ${
-              tab === t
-                ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
-                : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
-            }`}
-          >
-            {t === "info" ? "Informações" : "Histórico"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={[
+          { id: "info", label: "Informações" },
+          { id: "historico", label: "Histórico" },
+        ]}
+        activeTab={tab}
+        onChange={(t) => setTab(t as "info" | "historico")}
+      />
 
       {tab === "info" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-5 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-xs)] sm:grid-cols-3">
             <InfoField label="Empresa">
               {payable.companyId ? (
                 <Link
                   to={`/empresas/${payable.companyId}`}
                   className="text-[var(--color-accent)] hover:underline"
                 >
-                  {resolveLabel(companyOptions, payable.companyId)}
+                  {resolveOptionLabel(companyOptions, payable.companyId)}
                 </Link>
               ) : (
                 "—"
@@ -258,11 +247,11 @@ export function ContaPagarDetailPage() {
             </InfoField>
 
             <InfoField label="Categoria">
-              {resolveLabel(categoryOptions, payable.categoryId) ?? "—"}
+              {resolveOptionLabel(categoryOptions, payable.categoryId) ?? "—"}
             </InfoField>
 
             <InfoField label="Conta bancária">
-              {resolveLabel(bankOptions, payable.bankAccountId) ?? "—"}
+              {resolveOptionLabel(bankOptions, payable.bankAccountId) ?? "—"}
             </InfoField>
 
             <InfoField label="Vencimento">
@@ -283,21 +272,21 @@ export function ContaPagarDetailPage() {
           </div>
 
           {payable.status === "paid" && (
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <h2 className="mb-3 text-sm font-semibold text-[var(--color-text)]">
+            <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-xs)]">
+              <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">
                 Dados do pagamento
               </h2>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-3">
                 <InfoField label="Data do pagamento">
                   {formatDate(payable.paymentDate)}
                 </InfoField>
                 <InfoField label="Valor pago">
-                  <span className="font-semibold text-[var(--color-green)]">
+                  <span className="font-semibold text-[var(--color-success)]">
                     {formatCurrency(payable.paidValue)}
                   </span>
                 </InfoField>
                 <InfoField label="Conta bancária (saída)">
-                  {resolveLabel(bankOptions, payable.bankAccountId) ?? "—"}
+                  {resolveOptionLabel(bankOptions, payable.bankAccountId) ?? "—"}
                 </InfoField>
               </div>
             </div>
@@ -357,7 +346,7 @@ export function ContaPagarDetailPage() {
             placeholder="Selecione…"
           />
           {errors.bankAccountId && (
-            <p className="-mt-3 text-sm text-[var(--color-red)]">{errors.bankAccountId.message}</p>
+            <p className="-mt-3 text-sm text-[var(--color-danger)]">{errors.bankAccountId.message}</p>
           )}
         </form>
       </Modal>

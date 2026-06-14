@@ -121,14 +121,14 @@ export function AsyncCombobox({
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
-          "w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none transition-colors",
-          "placeholder:text-[var(--color-muted)]",
-          "focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]",
-          "disabled:cursor-not-allowed disabled:opacity-50",
+          "h-10 w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] shadow-[var(--shadow-xs)] outline-none transition-[border-color,box-shadow] duration-150",
+          "placeholder:text-[var(--color-faint)]",
+          "focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]",
+          "disabled:cursor-not-allowed disabled:opacity-60",
         )}
       />
       {isOpen && (
-        <div className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg">
+        <div className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-1 shadow-[var(--shadow-lg)]">
           {loading ? (
             <div className="px-3 py-2 text-sm text-[var(--color-muted)]">Buscando...</div>
           ) : results.length === 0 && query.trim() ? (
@@ -139,7 +139,7 @@ export function AsyncCombobox({
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option)}
-                className="w-full px-3 py-2 text-left text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-accent-soft)]"
+                className="w-full rounded-[var(--radius-md)] px-3 py-2 text-left text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent)]"
               >
                 {option.label}
               </button>

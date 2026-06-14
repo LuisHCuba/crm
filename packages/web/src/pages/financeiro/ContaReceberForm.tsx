@@ -56,7 +56,17 @@ type FormValues = z.infer<typeof schema>;
 type ContaReceberFormProps = {
   open: boolean;
   onClose: () => void;
-  receivable?: any;
+  receivable?: {
+    id: string;
+    description?: string | null;
+    companyId?: string | null;
+    productId?: string | null;
+    value?: string | null;
+    dueDate?: string | null;
+    status?: string | null;
+    categoryId?: string | null;
+    bankAccountId?: string | null;
+  };
 };
 
 export function ContaReceberForm({ open, onClose, receivable }: ContaReceberFormProps) {
@@ -223,6 +233,9 @@ export function ContaReceberForm({ open, onClose, receivable }: ContaReceberForm
             value={companyId ?? ""}
             onChange={(v) => setValue("companyId", v || undefined, { shouldValidate: true })}
           />
+          {errors.companyId ? (
+            <p className="-mt-3 text-sm text-[var(--color-danger)]">{errors.companyId.message}</p>
+          ) : null}
 
           <Select
             label="Produto (opcional)"
@@ -324,31 +337,33 @@ export function ContaReceberForm({ open, onClose, receivable }: ContaReceberForm
           </div>
         }
       >
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-[var(--color-border)] text-[var(--color-muted)]">
-              <th className="pb-2 font-medium">Parcela</th>
-              <th className="pb-2 font-medium">Vencimento</th>
-              <th className="pb-2 font-medium">Valor</th>
-            </tr>
-          </thead>
-          <tbody>
-            {previewParcels().map((p, i) => (
-              <tr
-                key={i}
-                className="border-b border-[var(--color-border)] last:border-b-0"
-              >
-                <td className="py-2 text-[var(--color-text)]">{p.label}</td>
-                <td className="py-2 text-[var(--color-text)]">
-                  {formatDate(p.dueDate)}
-                </td>
-                <td className="py-2 text-[var(--color-text)]">
-                  {formatCurrency(p.value)}
-                </td>
+        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)]">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="bg-[var(--color-surface-2)] text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
+                <th className="px-3 py-2 font-medium">Parcela</th>
+                <th className="px-3 py-2 font-medium">Vencimento</th>
+                <th className="px-3 py-2 font-medium">Valor</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {previewParcels().map((p, i) => (
+                <tr
+                  key={i}
+                  className="border-t border-[var(--color-border)]"
+                >
+                  <td className="px-3 py-2 text-[var(--color-text)]">{p.label}</td>
+                  <td className="px-3 py-2 text-[var(--color-text)]">
+                    {formatDate(p.dueDate)}
+                  </td>
+                  <td className="px-3 py-2 font-medium text-[var(--color-text)]">
+                    {formatCurrency(p.value)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Modal>
     </>
   );

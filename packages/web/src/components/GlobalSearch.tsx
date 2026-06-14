@@ -7,7 +7,9 @@ import {
   Building2,
   FolderOpen,
   ListChecks,
+  Loader2,
   Package,
+  SearchX,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -106,20 +108,13 @@ export function GlobalSearch() {
   const showDropdown = trimmed.length > 0 && !dismissed;
 
   useEffect(() => {
-    if (!trimmed) setDismissed(false);
-  }, [trimmed]);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
     const q = query.trim();
-    if (q.length === 0) {
-      setDebouncedQuery("");
-      setResults(null);
-      setLoading(false);
-      return;
-    }
+    if (q.length === 0) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
+      setLoading(true);
+      setResults(null);
       setDebouncedQuery(q);
     }, 300);
     return () => {
@@ -128,14 +123,8 @@ export function GlobalSearch() {
   }, [query]);
 
   useEffect(() => {
-    if (debouncedQuery.length === 0) {
-      setResults(null);
-      setLoading(false);
-      return;
-    }
+    if (debouncedQuery.length === 0) return;
     let cancelled = false;
-    setLoading(true);
-    setResults(null);
     api
       .get<unknown>("/busca", { params: { q: debouncedQuery } })
       .then((res) => {
@@ -258,7 +247,17 @@ export function GlobalSearch() {
         aria-haspopup="dialog"
         autoComplete="off"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          setQuery(v);
+          if (!v.trim()) {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            setDismissed(false);
+            setDebouncedQuery("");
+            setResults(null);
+            setLoading(false);
+          }
+        }}
         onKeyDown={onInputKeyDown}
         onFocus={() => setDismissed(false)}
         className="[&_input]:bg-[var(--color-bg)]"
@@ -267,25 +266,28 @@ export function GlobalSearch() {
         <div
           aria-label="Resultados da busca"
           className={cn(
-            "absolute left-0 right-0 top-full z-[120] mt-1 max-h-[min(70vh,420px)] overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 shadow-lg",
+            "absolute left-0 right-0 top-full z-[120] mt-2 max-h-[min(70vh,420px)] overflow-y-auto rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-1.5 shadow-[var(--shadow-lg)]",
           )}
         >
           {loading ? (
-            <p className="px-3 py-2 text-sm text-[var(--color-muted)]">
+            <div className="flex items-center gap-2 px-3 py-6 text-sm text-[var(--color-muted)]">
+              <Loader2 className="size-4 shrink-0 animate-spin text-[var(--color-accent)]" aria-hidden />
               Buscando…
-            </p>
+            </div>
           ) : !loading && (results === null || totalHits === 0) ? (
-            <p className="px-3 py-2 text-sm text-[var(--color-muted)]">
-              Nenhum resultado para &apos;{debouncedQuery}&apos;
-            </p>
+            <div className="flex flex-col items-center gap-2 px-3 py-10 text-center">
+              <SearchX className="size-6 text-[var(--color-faint)]" aria-hidden />
+              <p className="text-sm text-[var(--color-muted)]">
+                Nenhum resultado para &apos;{debouncedQuery}&apos;
+              </p>
+            </div>
           ) : (
             GROUPS.map(({ key, label, icon: Icon }) => {
               const list = results?.[key];
               if (!list?.length) return null;
               return (
-                <div key={key} className="px-1 pb-2 last:pb-0">
-                  <div className="flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                    <Icon className="size-3.5 shrink-0 opacity-80" aria-hidden />
+                <div key={key} className="pb-1.5 last:pb-0">
+                  <div className="px-2 py-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
                     {label}
                   </div>
                   <ul className="space-y-0.5">
@@ -293,17 +295,22 @@ export function GlobalSearch() {
                       <li key={`${key}-${item.id}`}>
                         <button
                           type="button"
-                          className="flex w-full flex-col items-start gap-0.5 rounded-lg px-2 py-2 text-left text-sm transition-colors hover:bg-[var(--color-accent-soft)]"
+                          className="group flex w-full items-start gap-2.5 rounded-[var(--radius-md)] px-2 py-2 text-left text-sm transition-colors hover:bg-[var(--color-accent-soft)] focus-visible:bg-[var(--color-accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]"
                           onClick={() => onSelect(key, item)}
                         >
-                          <span className="font-semibold text-[var(--color-text)]">
-                            {item.label}
+                          <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-2)] text-[var(--color-muted)] transition-colors group-hover:bg-[var(--color-surface)] group-hover:text-[var(--color-accent)] group-focus-visible:text-[var(--color-accent)]">
+                            <Icon className="size-3.5" aria-hidden />
                           </span>
-                          {item.sublabel ? (
-                            <span className="text-xs text-[var(--color-muted)]">
-                              {item.sublabel}
+                          <span className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate font-medium text-[var(--color-text)]">
+                              {item.label}
                             </span>
-                          ) : null}
+                            {item.sublabel ? (
+                              <span className="truncate text-xs text-[var(--color-muted)]">
+                                {item.sublabel}
+                              </span>
+                            ) : null}
+                          </span>
                         </button>
                       </li>
                     ))}

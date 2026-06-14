@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
-  GripVertical,
   Pencil,
   Plus,
 } from "lucide-react";
@@ -30,6 +29,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Tabs } from "@/components/ui/Tabs";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { ProjetoForm } from "./ProjetoForm";
 import { TarefaDrawer } from "./TarefaDrawer";
 
@@ -143,28 +144,24 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[200px] w-64 shrink-0 flex-col rounded-lg border bg-[var(--color-bg)] ${
+      className={`flex min-h-[200px] w-72 shrink-0 flex-col rounded-[var(--radius-xl)] border bg-[var(--color-surface-2)] transition-colors ${
         isOver
-          ? "border-[var(--color-accent)]"
+          ? "border-[var(--color-accent)] ring-2 ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
           : "border-[var(--color-border)]"
       }`}
     >
-      <div className="border-b border-[var(--color-border)] px-3 py-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-[var(--color-text)]">
-            {label}
-          </span>
-          <span className="text-xs text-[var(--color-muted)]">
-            {percentage}%
-          </span>
-        </div>
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-3 py-2.5">
+        <span className="truncate text-sm font-semibold text-[var(--color-text)]">
+          {label}
+        </span>
+        <Badge variant="neutral">{percentage}%</Badge>
       </div>
       <div className="flex-1 space-y-2 p-2">{children}</div>
     </div>
   );
 }
 
-function DraggableCard({ task }: { task: Task }) {
+function DraggableCard({ task, onOpen }: { task: Task; onOpen?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: task.id });
 
@@ -179,9 +176,16 @@ function DraggableCard({ task }: { task: Task }) {
     <div
       ref={setNodeRef}
       style={style}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen?.();
+        }
+      }}
       {...attributes}
       {...listeners}
-      className="cursor-grab rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-sm"
+      className="cursor-grab touch-none select-none rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-xs)] outline-none transition-shadow hover:shadow-[var(--shadow-sm)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] active:cursor-grabbing"
     >
       <p className="text-sm font-medium text-[var(--color-text)]">
         {task.title}
@@ -189,7 +193,7 @@ function DraggableCard({ task }: { task: Task }) {
       {task.priority && (
         <Badge
           variant={PRIORITY_VARIANT[task.priority] ?? "neutral"}
-          className="mt-1"
+          className="mt-2"
         >
           {PRIORITY_LABEL[task.priority] ?? task.priority}
         </Badge>
@@ -214,6 +218,8 @@ function KanbanTab({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
+  const tasksKey = ["projects", project.id, "tasks"] as const;
+
   const updateTask = useMutation({
     mutationFn: ({
       taskId,
@@ -221,15 +227,43 @@ function KanbanTab({
     }: {
       taskId: string;
       stageId: string;
+      stage?: { name: string; percentage: number; macroGroup: string };
     }) =>
       api.patch(`/projetos/${project.id}/tarefas/${taskId}`, { stageId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", project.id, "tasks"],
-      });
+    // Update otimista: move o card para a coluna de destino imediatamente.
+    onMutate: async (vars) => {
+      // Escrita otimista SÍNCRONA (antes de qualquer await) para evitar o flicker.
+      const previous = queryClient.getQueryData<Task[]>(tasksKey);
+
+      queryClient.setQueryData<Task[]>(tasksKey, (old) =>
+        (old ?? []).map((t) =>
+          t.id === vars.taskId
+            ? {
+                ...t,
+                stageId: vars.stageId,
+                ...(vars.stage
+                  ? {
+                      stageName: vars.stage.name,
+                      stagePercentage: vars.stage.percentage,
+                      stageMacroGroup: vars.stage.macroGroup,
+                    }
+                  : {}),
+              }
+            : t,
+        ),
+      );
+
+      await queryClient.cancelQueries({ queryKey: tasksKey });
+      return { previous };
+    },
+    onError: (e, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(tasksKey, context.previous);
+      toast.error(formatMutationError("Erro ao mover tarefa", e));
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: tasksKey });
       queryClient.invalidateQueries({ queryKey: ["projects", project.id] });
     },
-    onError: (e) => toast.error(formatMutationError("Erro ao mover tarefa", e)),
   });
 
   function handleDragStart(event: { active: { id: string | number } }) {
@@ -245,7 +279,18 @@ function KanbanTab({
     const newStageId = String(over.id);
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.stageId === newStageId) return;
-    updateTask.mutate({ taskId, stageId: newStageId });
+    const targetStage = project.stages.find((s) => s.id === newStageId);
+    updateTask.mutate({
+      taskId,
+      stageId: newStageId,
+      stage: targetStage
+        ? {
+            name: targetStage.name,
+            percentage: targetStage.percentage,
+            macroGroup: targetStage.macroGroup,
+          }
+        : undefined,
+    });
   }
 
   const tasksByStage = new Map<string, Task[]>();
@@ -271,16 +316,23 @@ function KanbanTab({
             percentage={stage.percentage}
           >
             {(tasksByStage.get(stage.id) ?? []).map((task) => (
-              <div key={task.id} onDoubleClick={() => onOpenTask(task.id)}>
-                <DraggableCard task={task} />
-              </div>
+              <DraggableCard
+                key={task.id}
+                task={task}
+                onOpen={() => onOpenTask(task.id)}
+              />
             ))}
+            {(tasksByStage.get(stage.id) ?? []).length === 0 && (
+              <p className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] px-3 py-6 text-center text-xs text-[var(--color-faint)]">
+                Sem tarefas
+              </p>
+            )}
           </DroppableColumn>
         ))}
       </div>
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeTask ? (
-          <div className="w-60 rounded-lg border border-[var(--color-accent)] bg-[var(--color-surface)] p-3 shadow-lg">
+          <div className="w-64 rounded-[var(--radius-lg)] border border-[var(--color-accent)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-lg)]">
             <p className="text-sm font-medium text-[var(--color-text)]">
               {activeTask.title}
             </p>
@@ -312,24 +364,16 @@ function ListaTab({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-xs)]">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[50rem] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-              <th className="w-8 px-4 py-3" />
-              <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                Título
-              </th>
-              <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                Etapa
-              </th>
-              <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                Prioridade
-              </th>
-              <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                Prazo
-              </th>
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)] text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
+              <th className="w-8 px-4 py-2.5" />
+              <th className="px-4 py-2.5 font-medium">Título</th>
+              <th className="px-4 py-2.5 font-medium">Etapa</th>
+              <th className="px-4 py-2.5 font-medium">Prioridade</th>
+              <th className="px-4 py-2.5 font-medium">Prazo</th>
             </tr>
           </thead>
           <tbody>
@@ -347,7 +391,7 @@ function ListaTab({
               <tr>
                 <td
                   colSpan={5}
-                  className="px-4 py-10 text-center text-[var(--color-muted)]"
+                  className="px-4 py-12 text-center text-sm text-[var(--color-muted)]"
                 >
                   Nenhuma tarefa.
                 </td>
@@ -384,14 +428,19 @@ function TaskExpandableRow({
 
   return (
     <>
-      <tr className="border-b border-[var(--color-border)] hover:bg-[var(--color-accent-soft)]">
+      <tr className="border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-surface-hover)]">
         <td className="px-4 py-3">
           {task.subtaskCount > 0 && (
-            <button type="button" onClick={onToggle}>
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-label={expanded ? "Recolher subtarefas" : "Expandir subtarefas"}
+              className="rounded-[var(--radius-sm)] text-[var(--color-muted)] outline-none transition-colors hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+            >
               {expanded ? (
-                <ChevronDown className="size-4 text-[var(--color-muted)]" />
+                <ChevronDown className="size-4" />
               ) : (
-                <ChevronRight className="size-4 text-[var(--color-muted)]" />
+                <ChevronRight className="size-4" />
               )}
             </button>
           )}
@@ -411,20 +460,22 @@ function TaskExpandableRow({
               {PRIORITY_LABEL[task.priority] ?? task.priority}
             </Badge>
           ) : (
-            "—"
+            <span className="text-[var(--color-faint)]">—</span>
           )}
         </td>
         <td className="px-4 py-3 text-[var(--color-text)]">
-          {task.plannedEndDate
-            ? new Date(task.plannedEndDate).toLocaleDateString("pt-BR")
-            : "—"}
+          {task.plannedEndDate ? (
+            new Date(task.plannedEndDate).toLocaleDateString("pt-BR")
+          ) : (
+            <span className="text-[var(--color-faint)]">—</span>
+          )}
         </td>
       </tr>
       {expanded &&
         subtasks?.map((sub) => (
           <tr
             key={sub.id}
-            className="border-b border-[var(--color-border)] bg-[var(--color-bg)]"
+            className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)]"
           >
             <td className="px-4 py-2" />
             <td className="px-4 py-2 pl-10 text-sm text-[var(--color-muted)]">
@@ -448,9 +499,9 @@ function TimelineTab({ tasks }: { tasks: Task[] }) {
 
   if (tasksWithDates.length === 0) {
     return (
-      <p className="py-8 text-center text-[var(--color-muted)]">
+      <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-12 text-center text-sm text-[var(--color-muted)]">
         Nenhuma tarefa com datas planejadas.
-      </p>
+      </div>
     );
   }
 
@@ -463,7 +514,7 @@ function TimelineTab({ tasks }: { tasks: Task[] }) {
   const range = maxDate - minDate || 1;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-xs)]">
       <div className="flex justify-between text-xs text-[var(--color-muted)]">
         <span>{new Date(minDate).toLocaleDateString("pt-BR")}</span>
         <span>{new Date(maxDate).toLocaleDateString("pt-BR")}</span>
@@ -477,10 +528,10 @@ function TimelineTab({ tasks }: { tasks: Task[] }) {
         return (
           <div key={t.id} className="relative h-8">
             <div
-              className="absolute top-0 flex h-full items-center rounded-md bg-[var(--color-accent)] px-2"
+              className="absolute top-0 flex h-full items-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-2 shadow-[var(--shadow-xs)]"
               style={{ left: `${left}%`, width: `${width}%` }}
             >
-              <span className="truncate text-xs font-medium text-white">
+              <span className="truncate text-xs font-medium text-[var(--color-accent-contrast)]">
                 {t.title}
               </span>
             </div>
@@ -511,7 +562,7 @@ export function ProjetoDetailPage() {
     onError: (e) => toast.error(formatMutationError("Erro ao arquivar projeto", e)),
   });
 
-  const { data: project, isLoading, isError } = useQuery<Project>({
+  const { data: project, isLoading, isError, refetch } = useQuery<Project>({
     queryKey: ["projects", id],
     queryFn: () => api.get(`/projetos/${id}`).then((r) => r.data),
     enabled: !!id,
@@ -525,11 +576,22 @@ export function ProjetoDetailPage() {
   });
 
   if (isLoading) {
-    return <p className="text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="space-y-6">
+        <div className="h-40 animate-pulse rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-2)]" />
+        <div className="h-11 w-80 animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface-2)]" />
+        <div className="h-64 animate-pulse rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-2)]" />
+      </div>
+    );
   }
 
   if (isError || !project) {
-    return <p className="text-[var(--color-muted)]">Projeto não encontrado</p>;
+    return (
+      <QueryErrorState
+        message="Projeto não encontrado ou indisponível."
+        onRetry={() => refetch()}
+      />
+    );
   }
 
   function openTask(taskId: string | null) {
@@ -537,13 +599,47 @@ export function ProjetoDetailPage() {
     setDrawerOpen(true);
   }
 
+  const metaItems: { label: string; value: string }[] = [
+    {
+      label: "Início planejado",
+      value: project.plannedStartDate
+        ? new Date(project.plannedStartDate).toLocaleDateString("pt-BR")
+        : "—",
+    },
+    {
+      label: "Fim planejado",
+      value: project.plannedEndDate
+        ? new Date(project.plannedEndDate).toLocaleDateString("pt-BR")
+        : "—",
+    },
+    {
+      label: "Início real",
+      value: project.actualStartDate
+        ? new Date(project.actualStartDate).toLocaleDateString("pt-BR")
+        : "—",
+    },
+    {
+      label: "Fim real",
+      value: project.actualEndDate
+        ? new Date(project.actualEndDate).toLocaleDateString("pt-BR")
+        : "—",
+    },
+    {
+      label: "Responsáveis",
+      value:
+        project.responsibles.length > 0
+          ? project.responsibles.map((r) => r.name).join(", ")
+          : "—",
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+      <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-[var(--color-text)]">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-semibold text-[var(--color-text)]">
                 {project.title}
               </h1>
               <Badge variant={STATUS_VARIANT[project.status] ?? "neutral"}>
@@ -551,12 +647,12 @@ export function ProjetoDetailPage() {
               </Badge>
             </div>
             {project.description && (
-              <p className="mt-1 text-sm text-[var(--color-muted)]">
+              <p className="mt-1.5 text-sm text-[var(--color-muted)]">
                 {project.description}
               </p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => setEditOpen(true)}>
               <Pencil className="size-4" /> Editar projeto
             </Button>
@@ -569,90 +665,47 @@ export function ProjetoDetailPage() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <div className="flex items-center gap-3">
-            <ProgressBar
-              value={project.progress}
-              className="flex-1"
-              color={project.progress >= 100 ? "green" : "accent"}
-            />
-            <span className="text-sm font-medium text-[var(--color-text)]">
-              {Math.round(project.progress)}%
-            </span>
-          </div>
+        <div className="mt-5 flex items-center gap-3">
+          <ProgressBar
+            value={project.progress}
+            className="flex-1"
+            color={project.progress >= 100 ? "green" : "accent"}
+          />
+          <span className="text-sm font-medium text-[var(--color-text)]">
+            {Math.round(project.progress)}%
+          </span>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-6 text-sm">
-          <div>
-            <span className="text-[var(--color-muted)]">Início planejado: </span>
-            <span className="text-[var(--color-text)]">
-              {project.plannedStartDate
-                ? new Date(project.plannedStartDate).toLocaleDateString("pt-BR")
-                : "—"}
-            </span>
-          </div>
-          <div>
-            <span className="text-[var(--color-muted)]">Fim planejado: </span>
-            <span className="text-[var(--color-text)]">
-              {project.plannedEndDate
-                ? new Date(project.plannedEndDate).toLocaleDateString("pt-BR")
-                : "—"}
-            </span>
-          </div>
-          <div>
-            <span className="text-[var(--color-muted)]">Início real: </span>
-            <span className="text-[var(--color-text)]">
-              {project.actualStartDate
-                ? new Date(project.actualStartDate).toLocaleDateString("pt-BR")
-                : "—"}
-            </span>
-          </div>
-          <div>
-            <span className="text-[var(--color-muted)]">Fim real: </span>
-            <span className="text-[var(--color-text)]">
-              {project.actualEndDate
-                ? new Date(project.actualEndDate).toLocaleDateString("pt-BR")
-                : "—"}
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-6 text-sm">
-          <div>
-            <span className="text-[var(--color-muted)]">Responsáveis: </span>
-            {project.responsibles.length > 0
-              ? project.responsibles.map((r) => r.name).join(", ")
-              : "—"}
-          </div>
-          {project.dealId && (
-            <div>
-              <Link
-                to={`/negocios/${project.dealId}`}
-                className="inline-flex items-center gap-1 text-[var(--color-accent)] hover:underline"
-              >
-                Ver negócio <ExternalLink className="size-3.5" />
-              </Link>
+        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-3 lg:grid-cols-5">
+          {metaItems.map((item) => (
+            <div key={item.label} className="flex flex-col gap-0.5">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+                {item.label}
+              </span>
+              <span className="text-sm text-[var(--color-text)]">
+                {item.value}
+              </span>
             </div>
-          )}
+          ))}
         </div>
+
+        {project.dealId && (
+          <div className="mt-4">
+            <Link
+              to={`/negocios/${project.dealId}`}
+              className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-accent)] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)] rounded-[var(--radius-sm)]"
+            >
+              Ver negócio <ExternalLink className="size-3.5" />
+            </Link>
+          </div>
+        )}
       </div>
 
-      <div className="flex gap-1 border-b border-[var(--color-border)]">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab
-                ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
-                : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={TABS.map((tab) => ({ id: tab, label: tab }))}
+        activeTab={activeTab}
+        onChange={(t) => setActiveTab(t as Tab)}
+      />
 
       {activeTab === "Kanban" && (
         <KanbanTab

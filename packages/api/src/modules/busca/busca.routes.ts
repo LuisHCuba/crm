@@ -5,5 +5,5 @@ import { search } from "./busca.handlers";
 export async function buscaRoutes(app: FastifyInstance) {
   const preHandler = [authenticate];
 
-  app.get("/busca", { preHandler }, search);
+  app.get<{ Querystring: Record<string, unknown> }>("/busca", { preHandler }, search);
 }

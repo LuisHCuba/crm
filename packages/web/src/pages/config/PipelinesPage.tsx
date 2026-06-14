@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 
 const STAGE_TYPE_OPTIONS = [
   { value: "open", label: "Aberta" },
@@ -79,11 +80,14 @@ function SortableStage({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2"
+      className={`flex items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 ${
+        isDragging ? "shadow-[var(--shadow-md)]" : "shadow-[var(--shadow-xs)]"
+      }`}
     >
       <button
         type="button"
-        className="cursor-grab text-[var(--color-muted)] hover:text-[var(--color-text)]"
+        aria-label="Reordenar etapa"
+        className="flex size-9 shrink-0 cursor-grab items-center justify-center rounded-[var(--radius-md)] text-[var(--color-faint)] outline-none transition-colors hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
@@ -94,18 +98,18 @@ function SortableStage({
         onChange={(e) => onUpdate({ name: e.target.value })}
         placeholder="Nome da etapa"
         aria-label="Nome da etapa"
-        className="flex-1 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm text-[var(--color-text)]"
+        className="h-9 min-w-0 flex-1 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2.5 text-sm text-[var(--color-text)] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[var(--color-faint)] focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
       />
       <Select
         options={STAGE_TYPE_OPTIONS}
         value={stage.type}
         onChange={(v) => onUpdate({ type: v as "open" | "won" | "lost" })}
-        className="w-28"
+        className="w-32 shrink-0"
       />
       <button
         type="button"
         onClick={onRemove}
-        className="text-[var(--color-red)] hover:opacity-70"
+        className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-muted)] outline-none transition-colors hover:bg-[var(--color-danger-soft)] hover:text-[var(--color-danger)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
         aria-label="Remover etapa"
       >
         <Trash2 className="size-4" />
@@ -162,14 +166,19 @@ function PipelineDrawer({
     }
   }, [isEdit, pipeline, form]);
 
-  useEffect(() => {
+  const [stagesSync, setStagesSync] = useState<{
+    stages: PipelineStage[] | undefined;
+    isEdit: boolean;
+  }>({ stages: undefined, isEdit });
+  if (stagesSync.stages !== stages || stagesSync.isEdit !== isEdit) {
+    setStagesSync({ stages, isEdit });
     if (stages) {
-      setLocalStages(
-        stages.map((s) => ({ ...s, _key: s.id })),
-      );
+      setLocalStages(stages.map((s) => ({ ...s, _key: s.id })));
     }
-    if (!isEdit) setLocalStages([]);
-  }, [stages, isEdit]);
+    if (!isEdit) {
+      setLocalStages([]);
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -283,31 +292,36 @@ function PipelineDrawer({
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Input
           label="Nome"
           {...form.register("name")}
           error={form.formState.errors.name?.message}
         />
-        <div className="flex items-center gap-2">
+        <label
+          htmlFor="pipeline-active"
+          className="flex items-center gap-2.5 text-sm text-[var(--color-text)]"
+        >
           <input
             type="checkbox"
             id="pipeline-active"
             {...form.register("active")}
-            className="size-4 rounded border-[var(--color-border)] accent-[var(--color-accent)]"
+            className="size-4 rounded-[var(--radius-xs)] border-[var(--color-border-strong)] accent-[var(--color-accent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
           />
-          <label
-            htmlFor="pipeline-active"
-            className="text-sm text-[var(--color-text)]"
-          >
-            Ativo
-          </label>
-        </div>
+          Pipeline ativo
+        </label>
 
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">
-            Etapas
-          </h3>
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted)]">
+              Etapas
+            </h3>
+            {localStages.length > 0 && (
+              <span className="text-xs text-[var(--color-muted)]">
+                {localStages.length}
+              </span>
+            )}
+          </div>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -339,11 +353,16 @@ function PipelineDrawer({
               </div>
             </SortableContext>
           </DndContext>
+          {localStages.length === 0 && (
+            <p className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface-2)] px-4 py-6 text-center text-xs text-[var(--color-muted)]">
+              Nenhuma etapa ainda. Adicione a primeira abaixo.
+            </p>
+          )}
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="mt-2"
+            className="mt-1"
             onClick={addStage}
           >
             <Plus className="size-4" /> Adicionar etapa
@@ -358,7 +377,7 @@ export function PipelinesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["pipelines"],
     queryFn: () =>
       api.get("/pipelines").then((r) => (Array.isArray(r.data) ? r.data : r.data?.data ?? []) as Pipeline[]),
@@ -384,12 +403,18 @@ export function PipelinesPage() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">
-          Pipelines
-        </h1>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold text-[var(--color-text)] sm:text-2xl">
+            Pipelines
+          </h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Gerencie os funis de vendas e organize as etapas de cada um.
+          </p>
+        </div>
         <Button
+          className="shrink-0"
           onClick={() => {
             setSelectedId(null);
             setDrawerOpen(true);
@@ -399,16 +424,24 @@ export function PipelinesPage() {
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data ?? []}
-        loading={isLoading}
-        getRowKey={(row) => row.id}
-        onRowClick={(row) => {
-          setSelectedId(row.id);
-          setDrawerOpen(true);
-        }}
-      />
+      {isError ? (
+        <QueryErrorState
+          message="Não foi possível carregar os pipelines."
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data ?? []}
+          loading={isLoading}
+          getRowKey={(row) => row.id}
+          emptyMessage="Nenhum pipeline cadastrado ainda."
+          onRowClick={(row) => {
+            setSelectedId(row.id);
+            setDrawerOpen(true);
+          }}
+        />
+      )}
 
       <PipelineDrawer
         open={drawerOpen}

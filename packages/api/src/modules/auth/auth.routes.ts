@@ -3,7 +3,14 @@ import { eq } from "drizzle-orm";
 import { hash } from "bcrypt";
 import { z } from "zod";
 import { authenticate, requireAdmin } from "../../lib/authenticate";
-import { register, login, me, updateProfile, changePassword } from "./auth.handlers";
+import {
+  login,
+  me,
+  updateProfile,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+} from "./auth.handlers";
 import { db } from "../../db/connection";
 import { users } from "../../db/schema";
 import { logAudit, logChanges } from "../../lib/audit";
@@ -101,8 +108,9 @@ async function restoreUser(request: FastifyRequest, reply: FastifyReply) {
 }
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/auth/register", register);
   app.post("/auth/login", login);
+  app.post("/auth/forgot-password", forgotPassword);
+  app.post("/auth/reset-password", resetPassword);
 
   app.get("/auth/me", { preHandler: [authenticate] }, me);
   app.get("/auth/users", { preHandler: [authenticate] }, listUsers);

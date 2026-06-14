@@ -6,6 +6,7 @@ import {
   asc,
   inArray,
   or,
+  sql,
   type SQL,
   type InferInsertModel,
 } from "drizzle-orm";
@@ -227,7 +228,7 @@ export async function myTasks(
       stageName: projectStages.name,
       stagePercentage: projectStages.percentage,
       stageMacroGroup: projectStages.macroGroup,
-      type: () => "task" as const,
+      type: sql<string>`'task'`,
     })
     .from(projectTasks)
     .innerJoin(projects, eq(projectTasks.projectId, projects.id))
@@ -251,7 +252,7 @@ export async function myTasks(
       stageName: projectStages.name,
       stagePercentage: projectStages.percentage,
       stageMacroGroup: projectStages.macroGroup,
-      type: () => "subtask" as const,
+      type: sql<string>`'subtask'`,
     })
     .from(projectSubtasks)
     .innerJoin(projectTasks, eq(projectSubtasks.taskId, projectTasks.id))

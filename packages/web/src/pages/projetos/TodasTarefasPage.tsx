@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
+import { useReferenceLabels } from "@/lib/use-reference-labels";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -21,14 +22,6 @@ const MACRO_OPTIONS = [
   { value: "paused", label: "Pausado" },
   { value: "cancelled", label: "Cancelado" },
 ];
-
-const MACRO_LABEL: Record<string, string> = {
-  not_started: "Não iniciado",
-  in_progress: "Em andamento",
-  completed: "Concluído",
-  paused: "Pausado",
-  cancelled: "Cancelado",
-};
 
 const MACRO_VARIANT: Record<
   string,
@@ -80,10 +73,12 @@ function ExpandableTaskRow({
   task,
   expanded,
   onToggle,
+  userMap,
 }: {
   task: Task;
   expanded: boolean;
   onToggle: () => void;
+  userMap: Map<string, string>;
 }) {
   const { data: subtasks } = useQuery({
     queryKey: [
@@ -104,24 +99,29 @@ function ExpandableTaskRow({
 
   return (
     <>
-      <tr className="border-b border-[var(--color-border)] hover:bg-[var(--color-accent-soft)]">
+      <tr className="border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-surface-hover)]">
         <td className="px-4 py-3">
-          <button type="button" onClick={onToggle} aria-label="Expandir subtarefas">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={expanded ? "Recolher subtarefas" : "Expandir subtarefas"}
+            className="rounded-[var(--radius-sm)] text-[var(--color-muted)] outline-none transition-colors hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+          >
             <ChevronDown
-              className={`size-4 text-[var(--color-muted)] transition-transform ${
+              className={`size-4 transition-transform ${
                 expanded ? "rotate-0" : "-rotate-90"
               }`}
             />
           </button>
         </td>
-        <td className="px-4 py-3 text-sm text-[var(--color-accent)]">
+        <td className="px-4 py-3 text-sm font-medium text-[var(--color-accent)]">
           {task.projectTitle}
         </td>
         <td className="px-4 py-3 text-sm font-medium text-[var(--color-text)]">
           {task.title}
         </td>
         <td className="px-4 py-3 text-sm text-[var(--color-muted)]">
-          {task.responsibleId?.slice(0, 8) ?? "—"}
+          {task.responsibleId ? userMap.get(task.responsibleId) ?? "—" : "—"}
         </td>
         <td className="px-4 py-3">
           <Badge variant={MACRO_VARIANT[task.stageMacroGroup] ?? "neutral"}>
@@ -134,20 +134,22 @@ function ExpandableTaskRow({
               {PRIORITY_LABEL[task.priority] ?? task.priority}
             </Badge>
           ) : (
-            "—"
+            <span className="text-[var(--color-faint)]">—</span>
           )}
         </td>
         <td className="px-4 py-3 text-sm text-[var(--color-text)]">
-          {task.plannedEndDate
-            ? new Date(task.plannedEndDate).toLocaleDateString("pt-BR")
-            : "—"}
+          {task.plannedEndDate ? (
+            new Date(task.plannedEndDate).toLocaleDateString("pt-BR")
+          ) : (
+            <span className="text-[var(--color-faint)]">—</span>
+          )}
         </td>
       </tr>
       {expanded &&
         subtasks?.map((sub) => (
           <tr
             key={sub.id}
-            className="border-b border-[var(--color-border)] bg-[var(--color-bg)]"
+            className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)]"
           >
             <td className="px-4 py-2" />
             <td className="px-4 py-2" />
@@ -155,7 +157,7 @@ function ExpandableTaskRow({
               ↳ {sub.title}
             </td>
             <td className="px-4 py-2 text-sm text-[var(--color-muted)]">
-              {sub.responsibleId?.slice(0, 8) ?? "—"}
+              {sub.responsibleId ? userMap.get(sub.responsibleId) ?? "—" : "—"}
             </td>
             <td className="px-4 py-2">
               <Badge variant="neutral">{sub.stageName}</Badge>
@@ -169,6 +171,7 @@ function ExpandableTaskRow({
 }
 
 export function TodasTarefasPage() {
+  const { userMap } = useReferenceLabels();
   const [priority, setPriority] = useState("");
   const [macroGroup, setMacroGroup] = useState("");
   const [page, setPage] = useState(1);
@@ -202,12 +205,17 @@ export function TodasTarefasPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[var(--color-text)]">
-        Todas as tarefas
-      </h1>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-0.5">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">
+          Todas as tarefas
+        </h1>
+        <p className="text-sm text-[var(--color-muted)]">
+          Visão consolidada das tarefas de todos os projetos.
+        </p>
+      </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
         <Select
           label="Prioridade"
           options={PRIORITY_OPTIONS}
@@ -230,30 +238,18 @@ export function TodasTarefasPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-xs)]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[56rem] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-                <th className="w-8 px-4 py-3" />
-                <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                  Projeto
-                </th>
-                <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                  Título
-                </th>
-                <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                  Responsável
-                </th>
-                <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                  Etapa
-                </th>
-                <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                  Prioridade
-                </th>
-                <th className="px-4 py-3 font-semibold text-[var(--color-text)]">
-                  Prazo
-                </th>
+              <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)] text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
+                <th className="w-8 px-4 py-2.5" />
+                <th className="px-4 py-2.5 font-medium">Projeto</th>
+                <th className="px-4 py-2.5 font-medium">Título</th>
+                <th className="px-4 py-2.5 font-medium">Responsável</th>
+                <th className="px-4 py-2.5 font-medium">Etapa</th>
+                <th className="px-4 py-2.5 font-medium">Prioridade</th>
+                <th className="px-4 py-2.5 font-medium">Prazo</th>
               </tr>
             </thead>
             <tbody>
@@ -261,7 +257,7 @@ export function TodasTarefasPage() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-10 text-center text-[var(--color-muted)]"
+                    className="px-4 py-12 text-center text-sm text-[var(--color-muted)]"
                   >
                     Carregando…
                   </td>
@@ -270,7 +266,7 @@ export function TodasTarefasPage() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-10 text-center text-[var(--color-muted)]"
+                    className="px-4 py-12 text-center text-sm text-[var(--color-muted)]"
                   >
                     Nenhuma tarefa.
                   </td>
@@ -282,6 +278,7 @@ export function TodasTarefasPage() {
                     task={task}
                     expanded={expandedRows.has(task.id)}
                     onToggle={() => toggleExpand(task.id)}
+                    userMap={userMap}
                   />
                 ))
               )}
@@ -299,6 +296,7 @@ export function TodasTarefasPage() {
           <Button
             variant="secondary"
             size="sm"
+            aria-label="Página anterior"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
           >
@@ -307,6 +305,7 @@ export function TodasTarefasPage() {
           <Button
             variant="secondary"
             size="sm"
+            aria-label="Próxima página"
             disabled={page >= pagination.totalPages}
             onClick={() => setPage((p) => p + 1)}
           >

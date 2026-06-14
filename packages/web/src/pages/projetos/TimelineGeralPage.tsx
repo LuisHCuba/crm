@@ -61,9 +61,9 @@ function barStyle(
 const MACRO_COLORS: Record<string, string> = {
   not_started: "var(--color-muted)",
   in_progress: "var(--color-accent)",
-  completed: "var(--color-green)",
-  paused: "var(--color-yellow)",
-  cancelled: "var(--color-red)",
+  completed: "var(--color-success)",
+  paused: "var(--color-warning)",
+  cancelled: "var(--color-danger)",
 };
 
 export function TimelineGeralPage() {
@@ -88,18 +88,30 @@ export function TimelineGeralPage() {
   const isLoading = loadingProjects || loadingTasks;
 
   if (isLoading) {
-    return <p className="text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="space-y-6">
+        <div className="h-9 w-48 animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface-2)]" />
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-32 animate-pulse rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-2)]"
+            />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (projects.length === 0) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">
+      <div className="space-y-6">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">
           Timeline geral
         </h1>
-        <p className="py-8 text-center text-[var(--color-muted)]">
+        <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-12 text-center text-sm text-[var(--color-muted)]">
           Nenhum projeto encontrado.
-        </p>
+        </div>
       </div>
     );
   }
@@ -114,21 +126,22 @@ export function TimelineGeralPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[var(--color-text)]">
-        Timeline geral
-      </h1>
-
-      <div className="flex justify-between text-xs text-[var(--color-muted)]">
-        <span>
-          {new Date(globalRange.min).toLocaleDateString("pt-BR")}
-        </span>
-        <span>
-          {new Date(globalRange.max).toLocaleDateString("pt-BR")}
-        </span>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-0.5">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">
+          Timeline geral
+        </h1>
+        <p className="text-sm text-[var(--color-muted)]">
+          Distribuição das tarefas planejadas ao longo do tempo.
+        </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="flex justify-between rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-xs text-[var(--color-muted)]">
+        <span>{new Date(globalRange.min).toLocaleDateString("pt-BR")}</span>
+        <span>{new Date(globalRange.max).toLocaleDateString("pt-BR")}</span>
+      </div>
+
+      <div className="space-y-4">
         {projects.map((project) => {
           const projectTasks = tasksByProject.get(project.id) ?? [];
           const tasksWithDates = projectTasks.filter(
@@ -138,10 +151,10 @@ export function TimelineGeralPage() {
           return (
             <div
               key={project.id}
-              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+              className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]"
             >
               <div className="mb-3 flex items-center gap-3">
-                <span className="text-sm font-semibold text-[var(--color-text)]">
+                <span className="truncate text-sm font-semibold text-[var(--color-text)]">
                   {project.title}
                 </span>
                 <ProgressBar
@@ -155,7 +168,7 @@ export function TimelineGeralPage() {
               </div>
 
               {tasksWithDates.length === 0 ? (
-                <p className="py-2 text-xs text-[var(--color-muted)]">
+                <p className="py-2 text-xs text-[var(--color-faint)]">
                   Nenhuma tarefa com datas planejadas.
                 </p>
               ) : (
@@ -170,7 +183,7 @@ export function TimelineGeralPage() {
                     return (
                       <div key={t.id} className="relative h-7">
                         <div
-                          className="absolute top-0 flex h-full items-center rounded-md px-2"
+                          className="absolute top-0 flex h-full items-center rounded-[var(--radius-md)] px-2 shadow-[var(--shadow-xs)]"
                           style={{
                             left: bs.left,
                             width: bs.width,
@@ -179,7 +192,7 @@ export function TimelineGeralPage() {
                               "var(--color-accent)",
                           }}
                         >
-                          <span className="truncate text-xs font-medium text-white">
+                          <span className="truncate text-xs font-medium text-[var(--color-accent-contrast)]">
                             {t.title}
                           </span>
                         </div>

@@ -32,12 +32,12 @@ function ContactIdsPicker({
     const data = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
     const options = data
       .filter(
-        (c: any) =>
+        (c: { id: string; fullName: string }) =>
           typeof c?.id === "string" &&
           c.id.length > 0 &&
           !value.includes(c.id),
       )
-      .map((c: any) => ({ value: c.id, label: c.fullName }));
+      .map((c: { id: string; fullName: string }) => ({ value: c.id, label: c.fullName }));
     lastResults.current = new Map(
       options.map((o) => [o.value, o.label] as [string, string]),
     );
@@ -63,6 +63,7 @@ function ContactIdsPicker({
               type="button"
               onClick={() => onChange(value.filter((id) => id !== cid))}
               aria-label={`Remover ${labels.get(cid) ?? cid}`}
+              className="-mr-0.5 rounded-full p-0.5 outline-none transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_18%,transparent)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
             >
               <X className="size-3" />
             </button>
@@ -122,7 +123,7 @@ type NegocioFormProps = {
   open: boolean;
   onClose: () => void;
   deal?: Deal | null;
-  onSaveSuccess?: (data: any) => void;
+  onSaveSuccess?: (data: unknown) => void;
 };
 
 export function NegocioForm({ open, onClose, deal, onSaveSuccess }: NegocioFormProps) {
@@ -165,9 +166,9 @@ export function NegocioForm({ open, onClose, deal, onSaveSuccess }: NegocioFormP
     staleTime: 60_000,
   });
   const stageOptions = (stagesRaw ?? [])
-    .filter((s: any) => typeof s?.id === "string" && s.id.length > 0)
-    .map((s: any) => ({ value: s.id, label: s.name }));
-  const selectedStageType = (stagesRaw ?? []).find((s: any) => s.id === watch("stageId"))?.type;
+    .filter((s: { id: string; name: string }) => typeof s?.id === "string" && s.id.length > 0)
+    .map((s: { id: string; name: string }) => ({ value: s.id, label: s.name }));
+  const selectedStageType = (stagesRaw ?? []).find((s: { id: string; type?: string }) => s.id === watch("stageId"))?.type;
 
   useEffect(() => {
     if (!open) return;
@@ -248,14 +249,14 @@ export function NegocioForm({ open, onClose, deal, onSaveSuccess }: NegocioFormP
           <Button
             onClick={handleSubmit(
               (data) => {
-                const stageType = (stagesRaw ?? []).find((s: any) => s.id === data.stageId)?.type;
+                const stageType = (stagesRaw ?? []).find((s: { id: string; type?: string }) => s.id === data.stageId)?.type;
                 if (stageType === "lost" && !data.lossReason) {
                   toast.error("Informe o motivo da perda");
                   return;
                 }
                 mutation.mutate(data);
               },
-              (errs) => {
+              () => {
                 toast.error("Corrija os campos");
               },
             )}
@@ -291,7 +292,7 @@ export function NegocioForm({ open, onClose, deal, onSaveSuccess }: NegocioFormP
           }}
         />
         {errors.pipelineId ? (
-          <p className="-mt-3 text-sm text-[var(--color-red)]">{errors.pipelineId.message}</p>
+          <p className="-mt-3 text-sm text-[var(--color-danger)]">{errors.pipelineId.message}</p>
         ) : null}
 
         <Select
@@ -302,7 +303,7 @@ export function NegocioForm({ open, onClose, deal, onSaveSuccess }: NegocioFormP
           disabled={!selectedPipelineId}
         />
         {errors.stageId ? (
-          <p className="-mt-3 text-sm text-[var(--color-red)]">{errors.stageId.message}</p>
+          <p className="-mt-3 text-sm text-[var(--color-danger)]">{errors.stageId.message}</p>
         ) : null}
 
         <Input
@@ -318,7 +319,7 @@ export function NegocioForm({ open, onClose, deal, onSaveSuccess }: NegocioFormP
           onChange={(v) => setValue("responsibleId", v, { shouldValidate: true })}
         />
         {errors.responsibleId ? (
-          <p className="-mt-3 text-sm text-[var(--color-red)]">{errors.responsibleId.message}</p>
+          <p className="-mt-3 text-sm text-[var(--color-danger)]">{errors.responsibleId.message}</p>
         ) : null}
 
         {!deal ? (

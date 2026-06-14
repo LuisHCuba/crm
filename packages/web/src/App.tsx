@@ -1,9 +1,11 @@
 import { Route, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { AdminRoute } from "@/components/layout/AdminRoute";
 import { Toaster } from "@/components/ui/Toast";
 import LoginPage from "@/pages/auth/LoginPage";
 import RecoverPasswordPage from "@/pages/auth/RecoverPasswordPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
 import { ProjetosPage } from "@/pages/projetos/ProjetosPage";
 import { ProjetoDetailPage } from "@/pages/projetos/ProjetoDetailPage";
@@ -38,6 +40,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/recuperar-senha" element={<RecoverPasswordPage />} />
+      <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
@@ -66,7 +69,9 @@ export default function App() {
           <Route path="config/categorias" element={<CategoriasPage />} />
           <Route path="config/log" element={<LogPage />} />
           <Route path="perfil" element={<PerfilPage />} />
-          <Route path="config/usuarios" element={<UsuariosPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="config/usuarios" element={<UsuariosPage />} />
+          </Route>
         </Route>
       </Route>
     </Routes>

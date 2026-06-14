@@ -10,14 +10,6 @@ import {
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 
-const MACRO_LABEL: Record<string, string> = {
-  not_started: "Não iniciado",
-  in_progress: "Em andamento",
-  completed: "Concluído",
-  paused: "Pausado",
-  cancelled: "Cancelado",
-};
-
 const MACRO_VARIANT: Record<
   string,
   "success" | "warning" | "danger" | "info" | "neutral"
@@ -92,44 +84,61 @@ export function MinhasTarefasPage() {
   ).length;
 
   if (isLoading) {
-    return <p className="text-[var(--color-muted)]">Carregando…</p>;
+    return (
+      <div className="space-y-6">
+        <div className="h-9 w-48 animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface-2)]" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-20 animate-pulse rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-2)]"
+            />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--color-text)]">
-        Minhas tarefas
-      </h1>
+      <div className="flex flex-col gap-0.5">
+        <h1 className="text-xl font-semibold text-[var(--color-text)]">
+          Minhas tarefas
+        </h1>
+        <p className="text-sm text-[var(--color-muted)]">
+          Tarefas atribuídas a você, agrupadas por projeto.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--color-yellow)_15%,transparent)]">
-            <Clock className="size-5 text-[var(--color-yellow)]" />
+        <div className="flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
+          <div className="flex size-10 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-warning-soft)]">
+            <Clock className="size-5 text-[var(--color-warning)]" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-[var(--color-text)]">
+            <p className="text-2xl font-semibold text-[var(--color-text)]">
               {pending}
             </p>
             <p className="text-sm text-[var(--color-muted)]">Pendentes</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-[color-mix(in_srgb,#3b82f6_15%,transparent)]">
-            <ListChecks className="size-5 text-[#3b82f6]" />
+        <div className="flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
+          <div className="flex size-10 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-info-soft)]">
+            <ListChecks className="size-5 text-[var(--color-info)]" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-[var(--color-text)]">
+            <p className="text-2xl font-semibold text-[var(--color-text)]">
               {inProgress}
             </p>
             <p className="text-sm text-[var(--color-muted)]">Em andamento</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--color-red)_15%,transparent)]">
-            <AlertTriangle className="size-5 text-[var(--color-red)]" />
+        <div className="flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)]">
+          <div className="flex size-10 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-danger-soft)]">
+            <AlertTriangle className="size-5 text-[var(--color-danger)]" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-[var(--color-text)]">
+            <p className="text-2xl font-semibold text-[var(--color-text)]">
               {overdue}
             </p>
             <p className="text-sm text-[var(--color-muted)]">Atrasadas</p>
@@ -138,9 +147,9 @@ export function MinhasTarefasPage() {
       </div>
 
       {!groups || groups.length === 0 ? (
-        <p className="py-8 text-center text-[var(--color-muted)]">
+        <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-12 text-center text-sm text-[var(--color-muted)]">
           Nenhuma tarefa atribuída a você.
-        </p>
+        </div>
       ) : (
         <div className="space-y-4">
           {groups.map((group) => {
@@ -148,12 +157,13 @@ export function MinhasTarefasPage() {
             return (
               <div
                 key={group.projectId}
-                className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]"
+                className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-xs)]"
               >
                 <button
                   type="button"
                   onClick={() => toggleCollapse(group.projectId)}
-                  className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-[var(--color-accent-soft)]"
+                  aria-expanded={!collapsed}
+                  className="flex w-full items-center gap-2 px-4 py-3 text-left outline-none transition-colors hover:bg-[var(--color-surface-hover)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]"
                 >
                   {collapsed ? (
                     <ChevronRight className="size-4 text-[var(--color-muted)]" />
@@ -163,32 +173,26 @@ export function MinhasTarefasPage() {
                   <span className="text-sm font-semibold text-[var(--color-text)]">
                     {group.projectTitle}
                   </span>
-                  <span className="text-xs text-[var(--color-muted)]">
-                    ({group.tasks.length + group.subtasks.length})
-                  </span>
+                  <Badge variant="neutral">
+                    {group.tasks.length + group.subtasks.length}
+                  </Badge>
                 </button>
 
                 {!collapsed && (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
                       <thead>
-                        <tr className="border-t border-[var(--color-border)] bg-[var(--color-bg)]">
-                          <th className="px-4 py-2 font-semibold text-[var(--color-text)]">
-                            Título
-                          </th>
-                          <th className="px-4 py-2 font-semibold text-[var(--color-text)]">
-                            Etapa
-                          </th>
-                          <th className="px-4 py-2 font-semibold text-[var(--color-text)]">
-                            Prazo
-                          </th>
+                        <tr className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)] text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
+                          <th className="px-4 py-2 font-medium">Título</th>
+                          <th className="px-4 py-2 font-medium">Etapa</th>
+                          <th className="px-4 py-2 font-medium">Prazo</th>
                         </tr>
                       </thead>
                       <tbody>
                         {group.tasks.map((t) => (
                           <tr
                             key={t.id}
-                            className="border-t border-[var(--color-border)]"
+                            className="border-t border-[var(--color-border)] transition-colors hover:bg-[var(--color-surface-hover)]"
                           >
                             <td className="px-4 py-2 text-[var(--color-text)]">
                               {t.title}
@@ -208,7 +212,7 @@ export function MinhasTarefasPage() {
                                   className={
                                     isOverdue(t.plannedEndDate) &&
                                     t.stageMacroGroup !== "completed"
-                                      ? "font-medium text-[var(--color-red)]"
+                                      ? "font-medium text-[var(--color-danger)]"
                                       : ""
                                   }
                                 >
@@ -217,7 +221,7 @@ export function MinhasTarefasPage() {
                                   ).toLocaleDateString("pt-BR")}
                                 </span>
                               ) : (
-                                "—"
+                                <span className="text-[var(--color-faint)]">—</span>
                               )}
                             </td>
                           </tr>
@@ -225,7 +229,7 @@ export function MinhasTarefasPage() {
                         {group.subtasks.map((s) => (
                           <tr
                             key={s.id}
-                            className="border-t border-[var(--color-border)] bg-[var(--color-bg)]"
+                            className="border-t border-[var(--color-border)] bg-[var(--color-surface-2)]"
                           >
                             <td className="px-4 py-2 pl-8 text-[var(--color-muted)]">
                               ↳ {s.title}{" "}

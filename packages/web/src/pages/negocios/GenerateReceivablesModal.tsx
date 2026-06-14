@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api, formatMutationError } from "@/lib/api";
-import { useBankAccountOptions, useCategoryOptions } from "@/lib/use-options";
+import { useBankAccountOptions, useCategoryOptions, useProductOptions } from "@/lib/use-options";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { Modal } from "@/components/ui/Modal";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 
-type LineItem = {
+export type LineItem = {
   id: string;
   productId: string;
   quantity: number;
@@ -55,6 +55,9 @@ export function GenerateReceivablesModal({
 
   const bankOptions = useBankAccountOptions();
   const categoryOptions = useCategoryOptions("revenue");
+  const productOptions = useProductOptions();
+  const productLabel = (productId: string) =>
+    productOptions.find((p) => p.value === productId)?.label ?? `Produto ${productId.slice(0, 8)}…`;
 
   const totalValue = lineItems.reduce((sum, li) => sum + Number(li.subtotal), 0);
 
@@ -74,7 +77,7 @@ export function GenerateReceivablesModal({
     }
     return lineItems.map((li) => ({
       productId: li.productId,
-      label: `Produto ${li.productId.slice(0, 8)}`,
+      label: productLabel(li.productId),
       value: li.subtotal,
       parcels: "1",
       firstDueDate: "",
@@ -130,7 +133,7 @@ export function GenerateReceivablesModal({
   const numParcels = Number(consolidatedRow?.parcels) || 1;
   const parcelValue = (totalValue / numParcels).toFixed(2);
   const rateio = lineItems.map((li) => ({
-    label: `Produto ${li.productId.slice(0, 8)}`,
+    label: productLabel(li.productId),
     percentage: totalValue > 0 ? ((Number(li.subtotal) / totalValue) * 100).toFixed(1) : "0",
   }));
   const previewParcels = consolidatedRow?.firstDueDate
@@ -163,14 +166,15 @@ export function GenerateReceivablesModal({
       }
     >
       <div className="space-y-4">
-        <div className="flex gap-1 rounded-lg border border-[var(--color-border)] p-1">
+        <div className="flex gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-1">
           <button
             type="button"
             onClick={() => setMode("item")}
+            aria-pressed={mode === "item"}
             className={cn(
-              "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "flex-1 rounded-[var(--radius-md)] px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
               mode === "item"
-                ? "bg-[var(--color-accent)] text-white"
+                ? "bg-[var(--color-surface)] text-[var(--color-accent)] shadow-[var(--shadow-xs)]"
                 : "text-[var(--color-muted)] hover:text-[var(--color-text)]",
             )}
           >
@@ -179,10 +183,11 @@ export function GenerateReceivablesModal({
           <button
             type="button"
             onClick={() => setMode("consolidated")}
+            aria-pressed={mode === "consolidated"}
             className={cn(
-              "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "flex-1 rounded-[var(--radius-md)] px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
               mode === "consolidated"
-                ? "bg-[var(--color-accent)] text-white"
+                ? "bg-[var(--color-surface)] text-[var(--color-accent)] shadow-[var(--shadow-xs)]"
                 : "text-[var(--color-muted)] hover:text-[var(--color-text)]",
             )}
           >
@@ -193,7 +198,7 @@ export function GenerateReceivablesModal({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-[var(--color-muted)]">
+              <tr className="border-b border-[var(--color-border)] text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
                 <th className="pb-2 pr-2 font-medium">Item</th>
                 <th className="pb-2 pr-2 font-medium">Valor</th>
                 <th className="pb-2 pr-2 font-medium">Parcelas</th>
@@ -268,7 +273,7 @@ export function GenerateReceivablesModal({
             <p className="mb-2 text-sm font-semibold text-[var(--color-text)]">Prévia das parcelas</p>
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-[var(--color-border)] text-[var(--color-muted)]">
+                <tr className="border-b border-[var(--color-border)] text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
                   <th className="pb-2 pr-2 font-medium">#</th>
                   <th className="pb-2 pr-2 font-medium">Valor</th>
                   <th className="pb-2 pr-2 font-medium">Vencimento</th>
@@ -293,8 +298,11 @@ export function GenerateReceivablesModal({
           </div>
         )}
 
-        <div className="text-right text-sm font-medium text-[var(--color-text)]">
-          Total: {formatCurrency(totalValue)}
+        <div className="flex items-center justify-between rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] px-3 py-2 text-sm">
+          <span className="font-medium text-[var(--color-muted)]">Total</span>
+          <span className="font-semibold text-[var(--color-text)]">
+            {formatCurrency(totalValue)}
+          </span>
         </div>
       </div>
     </Modal>

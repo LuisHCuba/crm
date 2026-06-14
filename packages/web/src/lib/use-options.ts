@@ -4,18 +4,21 @@ import api from "./api";
 
 type Option = { value: string; label: string };
 
-function toArray(d: any): any[] {
+function toArray(d: unknown): unknown[] {
   if (Array.isArray(d)) return d;
-  if (d && Array.isArray(d.data)) return d.data;
+  if (d && typeof d === "object" && Array.isArray((d as { data?: unknown }).data)) {
+    return (d as { data: unknown[] }).data;
+  }
   return [];
 }
 
-function mapOptions(data: any[], labelKey: string): Option[] {
+function mapOptions(data: unknown[], labelKey: string): Option[] {
   return (data ?? [])
-    .filter((item: any) => typeof item?.id === "string" && item.id.length > 0)
-    .map((item: any) => ({
-      value: item.id,
-      label: item[labelKey] ?? item.id,
+    .map((item) => item as Record<string, unknown>)
+    .filter((item) => typeof item?.id === "string" && (item.id as string).length > 0)
+    .map((item) => ({
+      value: item.id as string,
+      label: (item[labelKey] as string | undefined) ?? (item.id as string),
     }));
 }
 
@@ -107,7 +110,9 @@ export function useCategoryOptions(type?: "revenue" | "expense") {
   });
   return useMemo(() => {
     const arr = data ?? [];
-    const filtered = type ? arr.filter((c: any) => c.type === type) : arr;
+    const filtered = type
+      ? arr.filter((c) => (c as { type?: unknown }).type === type)
+      : arr;
     return mapOptions(filtered, "name");
   }, [data, type]);
 }

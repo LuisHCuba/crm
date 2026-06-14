@@ -61,14 +61,44 @@ const CALL_RESULT_OPTIONS = [
 
 const TYPE_CONFIG: Record<
   string,
-  { color: string; bg: string; icon: typeof Bell; label: string }
+  { iconClass: string; badgeClass: string; icon: typeof Bell; label: string }
 > = {
-  reminder: { color: "text-blue-500", bg: "bg-blue-500", icon: Bell, label: "Lembrete" },
-  completed: { color: "text-green-500", bg: "bg-green-500", icon: CheckCircle2, label: "Concluído" },
-  note: { color: "text-gray-400", bg: "bg-gray-400", icon: StickyNote, label: "Nota" },
-  call: { color: "text-purple-500", bg: "bg-purple-500", icon: Phone, label: "Ligação" },
-  meeting: { color: "text-orange-500", bg: "bg-orange-500", icon: Users, label: "Reunião" },
-  email: { color: "text-red-500", bg: "bg-red-500", icon: Mail, label: "E-mail" },
+  reminder: {
+    iconClass: "text-[var(--color-info)]",
+    badgeClass: "bg-[var(--color-info-soft)]",
+    icon: Bell,
+    label: "Lembrete",
+  },
+  completed: {
+    iconClass: "text-[var(--color-success)]",
+    badgeClass: "bg-[var(--color-success-soft)]",
+    icon: CheckCircle2,
+    label: "Concluído",
+  },
+  note: {
+    iconClass: "text-[var(--color-muted)]",
+    badgeClass: "bg-[var(--color-surface-2)]",
+    icon: StickyNote,
+    label: "Nota",
+  },
+  call: {
+    iconClass: "text-[var(--color-accent)]",
+    badgeClass: "bg-[var(--color-accent-soft)]",
+    icon: Phone,
+    label: "Ligação",
+  },
+  meeting: {
+    iconClass: "text-[var(--color-warning)]",
+    badgeClass: "bg-[var(--color-warning-soft)]",
+    icon: Users,
+    label: "Reunião",
+  },
+  email: {
+    iconClass: "text-[var(--color-danger)]",
+    badgeClass: "bg-[var(--color-danger-soft)]",
+    icon: Mail,
+    label: "E-mail",
+  },
 };
 
 function buildLinkedParams(props: ActivityTimelineProps) {
@@ -83,15 +113,15 @@ function buildLinkedParams(props: ActivityTimelineProps) {
 
 function SkeletonItem() {
   return (
-    <div className="flex gap-3 animate-pulse">
+    <div className="flex animate-pulse gap-3">
       <div className="flex flex-col items-center">
-        <div className="size-3 rounded-full bg-[var(--color-border)]" />
-        <div className="w-px flex-1 bg-[var(--color-border)]" />
+        <div className="size-8 shrink-0 rounded-full bg-[var(--color-surface-2)]" />
+        <div className="mt-1 w-px flex-1 bg-[var(--color-border)]" />
       </div>
-      <div className="flex-1 space-y-2 pb-6">
-        <div className="h-4 w-24 rounded bg-[var(--color-border)]" />
-        <div className="h-3 w-40 rounded bg-[var(--color-border)]" />
-        <div className="h-3 w-56 rounded bg-[var(--color-border)]" />
+      <div className="flex-1 space-y-2 pb-6 pt-1.5">
+        <div className="h-4 w-24 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]" />
+        <div className="h-3 w-40 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]" />
+        <div className="h-3 w-56 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]" />
       </div>
     </div>
   );
@@ -237,7 +267,7 @@ function ActivityForm({
               value={form.body}
               onChange={(e) => set("body", e.target.value)}
               rows={4}
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)]"
+              className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-faint)] outline-none transition-colors focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
             />
           </div>
         )}
@@ -264,7 +294,7 @@ function ActivityForm({
                 value={form.body}
                 onChange={(e) => set("body", e.target.value)}
                 rows={3}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)]"
+                className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-faint)] outline-none transition-colors focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
               />
             </div>
           </>
@@ -291,7 +321,7 @@ function ActivityForm({
                 value={form.body}
                 onChange={(e) => set("body", e.target.value)}
                 rows={3}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)]"
+                className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-faint)] outline-none transition-colors focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
               />
             </div>
           </>
@@ -311,7 +341,7 @@ function ActivityForm({
                 value={form.body}
                 onChange={(e) => set("body", e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-accent)]"
+                className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-faint)] outline-none transition-colors focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-ring)_35%,transparent)]"
               />
             </div>
           </>
@@ -367,9 +397,9 @@ export function ActivityTimeline(props: ActivityTimelineProps) {
       </div>
 
       {sorted.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[var(--color-muted)]">
+        <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] px-6 py-12 text-center text-sm text-[var(--color-muted)]">
           Nenhuma atividade registrada
-        </p>
+        </div>
       ) : (
         <div className="space-y-0">
           {sorted.map((activity, idx) => {
@@ -380,17 +410,23 @@ export function ActivityTimeline(props: ActivityTimelineProps) {
             return (
               <div key={activity.id} className="flex gap-3">
                 <div className="flex flex-col items-center">
-                  <div className={cn("mt-1 size-3 shrink-0 rounded-full", config.bg)} />
-                  {!isLast && <div className="w-px flex-1 bg-[var(--color-border)]" />}
+                  <div
+                    className={cn(
+                      "flex size-8 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ring-[var(--color-border)]",
+                      config.badgeClass,
+                    )}
+                  >
+                    <Icon className={cn("size-4", config.iconClass)} aria-hidden />
+                  </div>
+                  {!isLast && <div className="mt-1 w-px flex-1 bg-[var(--color-border)]" />}
                 </div>
-                <div className={cn("flex-1", !isLast && "pb-5")}>
-                  <div className="flex items-center gap-2">
-                    <Icon className={cn("size-4", config.color)} />
+                <div className={cn("flex-1 pt-1", !isLast && "pb-5")}>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                     <span className="text-sm font-semibold text-[var(--color-text)]">
                       {config.label}
                     </span>
                     {activity.title && (
-                      <span className="text-sm text-[var(--color-text)]">— {activity.title}</span>
+                      <span className="text-sm text-[var(--color-muted)]">— {activity.title}</span>
                     )}
                   </div>
                   <p className="mt-0.5 text-xs text-[var(--color-muted)]">
@@ -399,7 +435,7 @@ export function ActivityTimeline(props: ActivityTimelineProps) {
                     {format(new Date(activity.createdAt), "dd MMM yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                   {activity.body && (
-                    <p className="mt-1 text-sm text-[var(--color-text)] whitespace-pre-line">
+                    <p className="mt-1.5 whitespace-pre-line text-sm text-[var(--color-text)]">
                       {activity.body}
                     </p>
                   )}
