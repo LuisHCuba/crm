@@ -1,5 +1,6 @@
 # Build no servidor a partir do Git (sem pull do GHCR).
-# No Portainer: Stack → Environment variables → VITE_HASURA_ADMIN_SECRET=<admin secret do Hasura>
+# Portainer: desmarque "Pull latest image" ao fazer deploy.
+# Environment: VITE_HASURA_ADMIN_SECRET=<admin secret do Hasura>
 services:
   web:
     build:
@@ -7,7 +8,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_HASURA_ADMIN_SECRET: ${VITE_HASURA_ADMIN_SECRET}
-    image: lhcx-web:prod
+    pull_policy: never
     restart: unless-stopped
     networks:
       - crm
