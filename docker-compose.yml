@@ -1,6 +1,13 @@
+# Build no servidor a partir do Git (sem pull do GHCR).
+# No Portainer: Stack → Environment variables → VITE_HASURA_ADMIN_SECRET=<admin secret do Hasura>
 services:
   web:
-    image: ghcr.io/luishcuba/lhcx-web:latest
+    build:
+      context: https://github.com/LuisHCuba/crm.git#producao
+      dockerfile: Dockerfile
+      args:
+        VITE_HASURA_ADMIN_SECRET: ${VITE_HASURA_ADMIN_SECRET}
+    image: lhcx-web:prod
     restart: unless-stopped
     networks:
       - crm
