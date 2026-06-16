@@ -1,10 +1,9 @@
 node_modules
 dist
+.git
 .env
-.env.local
-.env*.local
+.env.*
 !.env.example
 *.log
-.DS_Store
 .vite
 tsconfig.tsbuildinfo

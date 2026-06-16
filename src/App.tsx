@@ -1,0 +1,53 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./store/auth";
+import { Layout } from "./components/Layout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Contacts from "./pages/Contacts";
+import ContactDetail from "./pages/ContactDetail";
+import Companies from "./pages/Companies";
+import CompanyDetail from "./pages/CompanyDetail";
+import Deals from "./pages/Deals";
+import DealDetail from "./pages/DealDetail";
+import Products from "./pages/Products";
+import Propostas from "./pages/Propostas";
+import PublicProposal from "./pages/PublicProposal";
+import Financeiro from "./pages/financeiro/Financeiro";
+import Profile from "./pages/Profile";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuth((s) => s.user);
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      {/* Página pública da proposta — fora do Layout e sem login. */}
+      <Route path="/p/:id" element={<PublicProposal />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Dashboard />} />
+        <Route path="contatos" element={<Contacts />} />
+        <Route path="contatos/:id" element={<ContactDetail />} />
+        <Route path="empresas" element={<Companies />} />
+        <Route path="empresas/:id" element={<CompanyDetail />} />
+        <Route path="negocios" element={<Deals />} />
+        <Route path="negocios/:id" element={<DealDetail />} />
+        <Route path="produtos" element={<Products />} />
+        <Route path="propostas" element={<Propostas />} />
+        <Route path="financeiro/*" element={<Financeiro />} />
+        <Route path="perfil" element={<Profile />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
