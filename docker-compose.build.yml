@@ -1,0 +1,23 @@
+# Fallback: build no servidor sem puxar do GHCR (Portainer → Git repository stack).
+services:
+  web:
+    build:
+      context: .
+      args:
+        VITE_HASURA_ADMIN_SECRET: ${VITE_HASURA_ADMIN_SECRET}
+    image: lhcx-web:local
+    restart: unless-stopped
+    networks:
+      - crm
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=crm"
+      - "traefik.http.routers.lhcx-web.priority=100"
+      - "traefik.http.routers.lhcx-web.rule=Host(`crm.lhcx.tech`)"
+      - "traefik.http.routers.lhcx-web.entrypoints=websecure"
+      - "traefik.http.routers.lhcx-web.tls.certresolver=leresolver"
+      - "traefik.http.services.lhcx-web.loadbalancer.server.port=80"
+
+networks:
+  crm:
+    external: true

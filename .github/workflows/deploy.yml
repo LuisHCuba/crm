@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: read
 
     steps:
       - name: Checkout
@@ -38,3 +39,15 @@ jobs:
           tags: |
             ${{ env.WEB_IMAGE }}:latest
             ${{ env.WEB_IMAGE }}:${{ github.sha }}
+
+      - name: Tornar imagem pública no GHCR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.packages.setPackageVisibilityForAuthenticatedUser({
+              package_type: "container",
+              package_name: "lhcx-web",
+              visibility: "public",
+            });
+            console.log("Pacote lhcx-web público.");
