@@ -6,8 +6,8 @@ import {
   Briefcase,
   Package,
   FileText,
+  ClipboardList,
   Wallet,
-  UserRound,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
   { to: "/negocios", label: "Negócios", icon: Briefcase },
   { to: "/produtos", label: "Produtos", icon: Package },
   { to: "/propostas", label: "Propostas", icon: FileText },
+  { to: "/formularios", label: "Formulários", icon: ClipboardList },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
 ];
 
@@ -71,29 +72,6 @@ export function Sidebar() {
       </nav>
 
       <div className="space-y-0.5 border-t border-shell-line p-2">
-        <NavLink
-          to="/perfil"
-          title="Perfil"
-          className={({ isActive }) =>
-            `group relative flex items-center rounded-md text-sm font-medium transition-colors ${
-              expanded ? "gap-3 px-3 py-2" : "justify-center px-0 py-2"
-            } ${
-              isActive
-                ? "bg-indigo-600 text-white"
-                : "text-slate-300 hover:bg-white/10 hover:text-white"
-            }`
-          }
-        >
-          <UserRound size={19} className="shrink-0" />
-          {expanded ? (
-            <span className="truncate">Perfil</span>
-          ) : (
-            <span className="pointer-events-none absolute left-full top-1/2 z-30 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-              Perfil
-            </span>
-          )}
-        </NavLink>
-
         <button
           onClick={toggle}
           title={expanded ? "Recolher menu" : "Expandir menu"}

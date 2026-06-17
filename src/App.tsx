@@ -12,8 +12,12 @@ import DealDetail from "./pages/DealDetail";
 import Products from "./pages/Products";
 import Propostas from "./pages/Propostas";
 import PublicProposal from "./pages/PublicProposal";
+import Forms from "./pages/Forms";
+import FormBuilder from "./pages/FormBuilder";
+import PublicForm from "./pages/PublicForm";
 import Financeiro from "./pages/financeiro/Financeiro";
 import Profile from "./pages/Profile";
+import Users from "./pages/Users";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAuth((s) => s.user);
@@ -27,6 +31,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       {/* Página pública da proposta — fora do Layout e sem login. */}
       <Route path="/p/:id" element={<PublicProposal />} />
+      {/* Formulário público (conversacional) — fora do Layout e sem login. */}
+      <Route path="/f/:id" element={<PublicForm />} />
       <Route
         path="/"
         element={
@@ -44,7 +50,10 @@ export default function App() {
         <Route path="negocios/:id" element={<DealDetail />} />
         <Route path="produtos" element={<Products />} />
         <Route path="propostas" element={<Propostas />} />
+        <Route path="formularios" element={<Forms />} />
+        <Route path="formularios/:id" element={<FormBuilder />} />
         <Route path="financeiro/*" element={<Financeiro />} />
+        <Route path="usuarios" element={<Users />} />
         <Route path="perfil" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -248,9 +248,9 @@ export default function Contacts() {
         onSelect={(id) => setView(id as ViewId)}
       />
 
-      {/* Conteúdo scrollável */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="space-y-3 p-5">
+      {/* Conteúdo: filtros fixos, tabela rola internamente */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 p-5">
           {/* Busca + filtros rápidos por coluna */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="min-w-[260px] flex-1">
@@ -337,10 +337,10 @@ export default function Contacts() {
               }
             />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-              <div className="overflow-x-auto">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="min-h-0 flex-1 overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="w-10 px-4 py-2.5">
                         <input

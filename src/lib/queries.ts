@@ -128,6 +128,44 @@ export const UPDATE_USER_PASSWORD = gql`
   }
 `;
 
+export const USERS_ADMIN_LIST = gql`
+  query UsersAdminList {
+    users(where: { archived: { _eq: false } }, order_by: { created_at: asc }) {
+      id
+      name
+      email
+      role
+      avatar_url
+      created_at
+      updated_at
+    }
+  }
+`;
+
+export const CREATE_USER = gql`
+  mutation CreateUser($obj: users_insert_input!) {
+    insert_users_one(object: $obj) {
+      id
+    }
+  }
+`;
+
+export const UPDATE_USER_ADMIN = gql`
+  mutation UpdateUserAdmin($id: uuid!, $set: users_set_input!) {
+    update_users_by_pk(pk_columns: { id: $id }, _set: $set) {
+      id
+    }
+  }
+`;
+
+export const ARCHIVE_USER = gql`
+  mutation ArchiveUser($id: uuid!) {
+    update_users_by_pk(pk_columns: { id: $id }, _set: { archived: true }) {
+      id
+    }
+  }
+`;
+
 export const CREATE_CONTACT = gql`
   mutation CreateContact($obj: contacts_insert_input!) {
     insert_contacts_one(object: $obj) {
