@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  GripVertical,
   Link as LinkIcon,
   Loader2,
   Plus,
   Save,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../lib/graphql";
+import { reorder } from "../lib/reorder";
 import {
   FORM_BY_ID,
   UPDATE_FORM,
@@ -27,6 +30,7 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import { ErrorState, Loading, fieldInputClass } from "../components/crm/ui";
 import { Conversation } from "../components/crm/form-builder/Conversation";
+import { GenerateFormAiModal } from "../components/crm/form-builder/GenerateFormAiModal";
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: "text", label: "Texto" },
@@ -47,6 +51,32 @@ const MAP_OPTIONS: { value: MapTo; label: string }[] = [
 ];
 
 const labelClass = "mb-1 block text-xs font-medium text-slate-600";
+const STEP_DRAG = "application/x-form-step-id";
+const FIELD_DRAG = "application/x-form-field-id";
+
+function DragHandle({
+  label,
+  onDragStart,
+  onDragEnd,
+}: {
+  label: string;
+  onDragStart: (e: DragEvent<HTMLButtonElement>) => void;
+  onDragEnd: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className="cursor-grab rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 active:cursor-grabbing"
+      title={label}
+      aria-label={label}
+    >
+      <GripVertical size={16} />
+    </button>
+  );
+}
 
 function publicLink(id: string) {
   return `${window.location.origin}/f/${id}`;
@@ -56,15 +86,43 @@ function FieldEditor({
   field,
   onChange,
   onRemove,
+  isDragging,
+  isDragOver,
+  onFieldDragStart,
+  onFieldDragEnd,
+  onFieldDragOver,
+  onFieldDragLeave,
+  onFieldDrop,
 }: {
   field: FormField;
   onChange: (next: FormField) => void;
   onRemove: () => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onFieldDragStart: (e: DragEvent<HTMLButtonElement>) => void;
+  onFieldDragEnd: () => void;
+  onFieldDragOver: (e: DragEvent<HTMLDivElement>) => void;
+  onFieldDragLeave: () => void;
+  onFieldDrop: (e: DragEvent<HTMLDivElement>) => void;
 }) {
   const hasOptions = field.type === "select" || field.type === "radio";
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <div
+      onDragOver={onFieldDragOver}
+      onDragLeave={onFieldDragLeave}
+      onDrop={onFieldDrop}
+      className={`rounded-lg border bg-slate-50 p-3 transition ${
+        isDragOver
+          ? "border-indigo-400 ring-2 ring-indigo-200"
+          : "border-slate-200"
+      } ${isDragging ? "opacity-50" : ""}`}
+    >
       <div className="flex items-start gap-2">
+        <DragHandle
+          label="Arrastar pergunta"
+          onDragStart={onFieldDragStart}
+          onDragEnd={onFieldDragEnd}
+        />
         <div className="flex-1 space-y-2">
           <div>
             <label className={labelClass}>Rótulo</label>
@@ -169,6 +227,13 @@ function StepEditor({
   onChange,
   onRemove,
   onMove,
+  isDragging,
+  isDragOver,
+  onStepDragStart,
+  onStepDragEnd,
+  onStepDragOver,
+  onStepDragLeave,
+  onStepDrop,
 }: {
   step: FormStep;
   index: number;
@@ -176,7 +241,17 @@ function StepEditor({
   onChange: (next: FormStep) => void;
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onStepDragStart: (e: DragEvent<HTMLButtonElement>) => void;
+  onStepDragEnd: () => void;
+  onStepDragOver: (e: DragEvent<HTMLDivElement>) => void;
+  onStepDragLeave: () => void;
+  onStepDrop: (e: DragEvent<HTMLDivElement>) => void;
 }) {
+  const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
+  const [dragOverFieldId, setDragOverFieldId] = useState<string | null>(null);
+
   const updateField = (fieldId: string, next: FormField) =>
     onChange({
       ...step,
@@ -185,6 +260,14 @@ function StepEditor({
 
   const removeField = (fieldId: string) =>
     onChange({ ...step, fields: step.fields.filter((f) => f.id !== fieldId) });
+
+  const reorderFields = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const from = step.fields.findIndex((f) => f.id === fromId);
+    const to = step.fields.findIndex((f) => f.id === toId);
+    if (from < 0 || to < 0) return;
+    onChange({ ...step, fields: reorder(step.fields, from, to) });
+  };
 
   const addField = () =>
     onChange({
@@ -202,8 +285,22 @@ function StepEditor({
     });
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div
+      onDragOver={onStepDragOver}
+      onDragLeave={onStepDragLeave}
+      onDrop={onStepDrop}
+      className={`rounded-xl border bg-white p-4 transition ${
+        isDragOver
+          ? "border-indigo-400 ring-2 ring-indigo-200"
+          : "border-slate-200"
+      } ${isDragging ? "opacity-50" : ""}`}
+    >
       <div className="mb-3 flex items-center gap-2">
+        <DragHandle
+          label="Arrastar etapa"
+          onDragStart={onStepDragStart}
+          onDragEnd={onStepDragEnd}
+        />
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
           {index + 1}
         </span>
@@ -248,6 +345,35 @@ function StepEditor({
             field={field}
             onChange={(next) => updateField(field.id, next)}
             onRemove={() => removeField(field.id)}
+            isDragging={draggingFieldId === field.id}
+            isDragOver={dragOverFieldId === field.id}
+            onFieldDragStart={(e) => {
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData(FIELD_DRAG, field.id);
+              setDraggingFieldId(field.id);
+            }}
+            onFieldDragEnd={() => {
+              setDraggingFieldId(null);
+              setDragOverFieldId(null);
+            }}
+            onFieldDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setDragOverFieldId(field.id);
+            }}
+            onFieldDragLeave={() => {
+              setDragOverFieldId((current) =>
+                current === field.id ? null : current
+              );
+            }}
+            onFieldDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const fromId = e.dataTransfer.getData(FIELD_DRAG);
+              setDraggingFieldId(null);
+              setDragOverFieldId(null);
+              if (fromId) reorderFields(fromId, field.id);
+            }}
           />
         ))}
       </div>
@@ -270,6 +396,9 @@ export default function FormBuilder() {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<FormStatus>("draft");
   const [definition, setDefinition] = useState<FormDefinition | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
+  const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["form", id],
@@ -350,10 +479,19 @@ export default function FormBuilder() {
       if (!d) return d;
       const target = index + dir;
       if (target < 0 || target >= d.steps.length) return d;
-      const steps = [...d.steps];
-      [steps[index], steps[target]] = [steps[target], steps[index]];
-      return { ...d, steps };
+      return { ...d, steps: reorder(d.steps, index, target) };
     });
+
+  const reorderSteps = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    setDefinition((d) => {
+      if (!d) return d;
+      const from = d.steps.findIndex((s) => s.id === fromId);
+      const to = d.steps.findIndex((s) => s.id === toId);
+      if (from < 0 || to < 0) return d;
+      return { ...d, steps: reorder(d.steps, from, to) };
+    });
+  };
 
   const addStep = () =>
     setDefinition((d) =>
@@ -401,6 +539,12 @@ export default function FormBuilder() {
             >
               <ArrowLeft size={16} /> Voltar
             </Link>
+            <button
+              onClick={() => setAiOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+            >
+              <Sparkles size={16} /> Gerar com IA
+            </button>
             <button
               onClick={copyLink}
               className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
@@ -465,6 +609,35 @@ export default function FormBuilder() {
                     onChange={(next) => updateStep(step.id, next)}
                     onRemove={() => removeStep(step.id)}
                     onMove={(dir) => moveStep(i, dir)}
+                    isDragging={draggingStepId === step.id}
+                    isDragOver={dragOverStepId === step.id}
+                    onStepDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData(STEP_DRAG, step.id);
+                      setDraggingStepId(step.id);
+                    }}
+                    onStepDragEnd={() => {
+                      setDraggingStepId(null);
+                      setDragOverStepId(null);
+                    }}
+                    onStepDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      setDragOverStepId(step.id);
+                    }}
+                    onStepDragLeave={() => {
+                      setDragOverStepId((current) =>
+                        current === step.id ? null : current
+                      );
+                    }}
+                    onStepDrop={(e) => {
+                      e.preventDefault();
+                      const fromId = e.dataTransfer.getData(STEP_DRAG);
+                      if (!fromId || e.dataTransfer.getData(FIELD_DRAG)) return;
+                      setDraggingStepId(null);
+                      setDragOverStepId(null);
+                      reorderSteps(fromId, step.id);
+                    }}
                   />
                 ))}
               </div>
@@ -571,9 +744,20 @@ export default function FormBuilder() {
           <div className="border-b border-slate-200 bg-white px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Pré-visualização ao vivo
           </div>
-          <Conversation key={JSON.stringify(definition)} definition={definition} />
+          <Conversation definition={definition} enableAutoFocus={false} />
         </div>
       </div>
+
+      <GenerateFormAiModal
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        replaceExisting
+        onAccept={(generated) => {
+          setTitle(generated.title);
+          setDefinition(generated.definition);
+          toast.success("Formulário aplicado — clique em Salvar para persistir");
+        }}
+      />
     </div>
   );
 }

@@ -1,0 +1,128 @@
+{
+  "name": "CRM Form AI Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-form-ai",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e58c9c0c-db8e-4bce-8e57-9bb4b311071c",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-288, 32],
+      "webhookId": "crm-form-ai"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "system-prompt",
+              "name": "systemPrompt",
+              "value": "Você gera formulários conversacionais estilo Typebot para um CRM.\n\nCOMPLETUDE — sem limite de quantidade de perguntas:\n- Gere TODAS as perguntas que o texto pedir ou implicar.\n- Itens numerados, bullets, tabelas e parágrafos com dúvidas viram perguntas.\n- Descrições de processos manuais viram perguntas de confirmação (quem mantém, de onde vem, com que frequência).\n- NÃO resuma, NÃO corte, NÃO agrupe perguntas distintas.\n- Use step.title para seções quando houver blocos temáticos.\n- Prefira type textarea para respostas abertas.\n\nRegras técnicas:\n- Responda SOMENTE com JSON válido, sem markdown.\n- Uma pergunta por etapa (1 field por step).\n- Tipos: text, email, phone, textarea, select, radio, number.\n- mapTo: \"\", full_name, email, phone, job_title.\n\nSchema:\n{\"title\":\"...\",\"definition\":{\"steps\":[{\"id\":\"...\",\"title\":\"\",\"fields\":[{\"id\":\"...\",\"type\":\"textarea\",\"label\":\"...\",\"required\":true,\"mapTo\":\"\"}]}],\"thankYou\":{\"title\":\"Obrigado!\",\"message\":\"...\"},\"theme\":{\"primary\":\"#4f46e5\"},\"settings\":{\"source\":\"website\"}}}",
+              "type": "string"
+            },
+            {
+              "id": "user-prompt",
+              "name": "userPrompt",
+              "value": "={{ $json.body?.prompt || $json.prompt || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "52e907ab-8049-4733-8654-176402ff1f34",
+      "name": "Montar prompts",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-64, 32]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userPrompt }}",
+        "options": {
+          "systemMessage": "={{ $json.systemPrompt }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [160, 32],
+      "id": "0357d8a0-946a-47fb-819e-1e12c4058b4d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 65536,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [160, 208],
+      "id": "feb41d6c-ea8e-44c4-a9ad-a43feebae34f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MyT5xxSgObQsrmh5",
+          "name": "GEMINI LUIHSCUBA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {\n    const r = (Math.random() * 16) | 0;\n    const v = c === 'x' ? r : (r & 0x3) | 0x8;\n    return v.toString(16);\n  });\n}\n\nconst FIELD_TYPES = ['text', 'email', 'phone', 'textarea', 'select', 'radio', 'number'];\nconst MAP_TO = ['', 'full_name', 'email', 'phone', 'job_title'];\n\nfunction parseAiContent(item) {\n  const raw = item.json.output\n    ?? item.json.text\n    ?? item.json.message?.content\n    ?? item.json.content\n    ?? '';\n\n  const trimmed = String(raw).trim();\n  if (!trimmed) throw new Error('IA não retornou conteúdo');\n\n  try {\n    return JSON.parse(trimmed);\n  } catch {\n    const jsonMatch = trimmed.match(/\\{[\\s\\S]*\\}/);\n    if (!jsonMatch) throw new Error('IA não retornou JSON');\n    return JSON.parse(jsonMatch[0]);\n  }\n}\n\nfunction normalizeField(field) {\n  const f = field || {};\n  return {\n    id: f.id || uuid(),\n    type: FIELD_TYPES.includes(f.type) ? f.type : 'text',\n    label: f.label || 'Pergunta',\n    placeholder: f.placeholder || '',\n    required: !!f.required,\n    options: Array.isArray(f.options) ? f.options.filter(Boolean) : undefined,\n    mapTo: MAP_TO.includes(f.mapTo) ? f.mapTo : '',\n  };\n}\n\nconst parsed = parseAiContent($input.first());\nconst def = parsed.definition || parsed;\nconst steps = (def.steps || []).map((step) => ({\n  id: step.id || uuid(),\n  title: step.title || '',\n  fields: (step.fields || []).map(normalizeField),\n}));\n\nif (!steps.length || !steps.some((s) => s.fields.length)) {\n  throw new Error('Nenhuma pergunta gerada');\n}\n\nreturn [{\n  json: {\n    title: parsed.title || 'Formulário gerado',\n    definition: {\n      steps,\n      thankYou: {\n        title: def.thankYou?.title || 'Obrigado!',\n        message: def.thankYou?.message || 'Recebemos suas informações.',\n        buttonLabel: def.thankYou?.buttonLabel || '',\n        redirectUrl: def.thankYou?.redirectUrl || '',\n      },\n      theme: {\n        primary: def.theme?.primary || '#4f46e5',\n        background: def.theme?.background || '',\n        logoUrl: def.theme?.logoUrl || '',\n      },\n      settings: {\n        source: def.settings?.source || 'website',\n        description: def.settings?.description || '',\n      },\n    },\n  },\n}];"
+      },
+      "id": "2319c344-349e-4bad-8fe5-a7c52ea50c38",
+      "name": "Normalizar JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [512, 32]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { title: $json.title, definition: $json.definition } }}",
+        "options": {}
+      },
+      "id": "03733927-8f0d-4136-beed-c88f5449ee13",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [736, 32]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Montar prompts", "type": "main", "index": 0 }]]
+    },
+    "Montar prompts": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "AI Agent": {
+      "main": [[{ "node": "Normalizar JSON", "type": "main", "index": 0 }]]
+    },
+    "Normalizar JSON": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c5b0d4aa1b15c3bcc6db66f2799b10da86516055b68e86f53113fd1b1705de2"
+  }
+}

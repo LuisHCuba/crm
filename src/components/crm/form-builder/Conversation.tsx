@@ -12,11 +12,13 @@ function FieldControl({
   value,
   onChange,
   primary,
+  enableAutoFocus,
 }: {
   field: FormField;
   value: AnswerValue | undefined;
   onChange: (value: AnswerValue) => void;
   primary: string;
+  enableAutoFocus: boolean;
 }) {
   const strValue = Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
@@ -24,7 +26,7 @@ function FieldControl({
     case "textarea":
       return (
         <textarea
-          autoFocus
+          autoFocus={enableAutoFocus}
           rows={4}
           value={strValue}
           placeholder={field.placeholder}
@@ -35,7 +37,7 @@ function FieldControl({
     case "select":
       return (
         <select
-          autoFocus
+          autoFocus={enableAutoFocus}
           value={strValue}
           onChange={(e) => onChange(e.target.value)}
           className={fieldInputClass}
@@ -92,7 +94,7 @@ function FieldControl({
           : "text";
       return (
         <input
-          autoFocus
+          autoFocus={enableAutoFocus}
           type={inputType}
           value={strValue}
           placeholder={field.placeholder}
@@ -119,9 +121,12 @@ function isFilled(value: AnswerValue | undefined): boolean {
 export function Conversation({
   definition,
   onSubmit,
+  enableAutoFocus = true,
 }: {
   definition: FormDefinition;
   onSubmit?: (answers: Answers) => Promise<void>;
+  /** Desligar no builder — evita roubar foco dos inputs de edição. */
+  enableAutoFocus?: boolean;
 }) {
   const steps = definition.steps ?? [];
   const [index, setIndex] = useState(0);
@@ -256,6 +261,7 @@ export function Conversation({
                     value={answers[field.id]}
                     onChange={(v) => setAnswer(field.id, v)}
                     primary={primary}
+                    enableAutoFocus={enableAutoFocus}
                   />
                 </div>
               ))}

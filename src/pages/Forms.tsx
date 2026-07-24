@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Link as LinkIcon,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../lib/graphql";
@@ -22,6 +23,8 @@ import {
 import { formatDate } from "../lib/format";
 import { PageHeader } from "../components/PageHeader";
 import { Badge, EmptyState, ErrorState, Loading } from "../components/crm/ui";
+import { GenerateFormAiModal } from "../components/crm/form-builder/GenerateFormAiModal";
+import type { GeneratedForm } from "../lib/form-ai";
 
 function publicLink(id: string) {
   return `${window.location.origin}/f/${id}`;
@@ -31,6 +34,7 @@ export default function Forms() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["forms"],
@@ -38,12 +42,12 @@ export default function Forms() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (payload?: { title: string; definition: GeneratedForm["definition"] }) =>
       gqlClient.request<{ insert_forms_one: { id: string } }>(CREATE_FORM, {
         obj: {
-          title: "Novo formulário",
+          title: payload?.title ?? "Novo formulário",
           status: "draft",
-          definition: emptyDefinition(),
+          definition: payload?.definition ?? emptyDefinition(),
         },
       }),
     onSuccess: (res) => {
@@ -85,13 +89,21 @@ export default function Forms() {
         title="Formulários"
         subtitle={data ? `${data.forms.length} formulários` : "Carregando..."}
         action={
-          <button
-            onClick={() => createMutation.mutate()}
-            disabled={createMutation.isPending}
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
-          >
-            <Plus size={16} /> Novo formulário
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAiOpen(true)}
+              className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+            >
+              <Sparkles size={16} /> Gerar com IA
+            </button>
+            <button
+              onClick={() => createMutation.mutate(undefined)}
+              disabled={createMutation.isPending}
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+            >
+              <Plus size={16} /> Novo formulário
+            </button>
+          </div>
         }
       />
 
@@ -118,13 +130,21 @@ export default function Forms() {
             title="Nenhum formulário"
             description="Crie um formulário conversacional estilo Typebot e compartilhe um link público para captar leads."
             action={
-              <button
-                onClick={() => createMutation.mutate()}
-                disabled={createMutation.isPending}
-                className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
-              >
-                <Plus size={16} /> Novo formulário
-              </button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  onClick={() => setAiOpen(true)}
+                  className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                >
+                  <Sparkles size={16} /> Gerar com IA
+                </button>
+                <button
+                  onClick={() => createMutation.mutate(undefined)}
+                  disabled={createMutation.isPending}
+                  className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  <Plus size={16} /> Novo formulário
+                </button>
+              </div>
             }
           />
         )}
@@ -205,6 +225,15 @@ export default function Forms() {
           </div>
         )}
       </div>
+
+      <GenerateFormAiModal
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        onAccept={(generated) => {
+          createMutation.mutate(generated);
+          toast.success("Formulário gerado — revise e publique quando estiver pronto");
+        }}
+      />
     </div>
   );
 }
