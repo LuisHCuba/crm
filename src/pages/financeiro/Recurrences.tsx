@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Repeat, Play, Pencil, Trash2, Pause } from "lucide-react";
+import { Loader2, Plus, Repeat, Play, Pencil, Trash2, Pause, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../../lib/graphql";
 import {
@@ -30,7 +30,7 @@ import { Field, inputCls, Btn, EmptyState } from "../../components/financeiro/ui
 export default function Recurrences() {
   const qc = useQueryClient();
   const ref = useFinReference();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["fin-recurrences"],
     queryFn: () => gqlClient.request<{ recurrences: Recurrence[] }>(RECURRENCES_QUERY),
   });
@@ -94,6 +94,7 @@ export default function Recurrences() {
   async function toggle(r: Recurrence) {
     try {
       await gqlClient.request(UPDATE_RECURRENCE, { id: r.id, set: { active: !r.active } });
+      toast.success(r.active ? "Recorrência pausada." : "Recorrência reativada.");
       refetch();
     } catch {
       toast.error("Erro ao atualizar.");
@@ -115,6 +116,20 @@ export default function Recurrences() {
     return (
       <div className="flex items-center gap-2 text-slate-500">
         <Loader2 className="animate-spin" size={18} /> Carregando recorrências…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+        <span className="text-sm">Não foi possível carregar as recorrências.</span>
+        <button
+          onClick={refetch}
+          className="shrink-0 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-100"
+        >
+          Tentar novamente
+        </button>
       </div>
     );
   }
@@ -182,17 +197,19 @@ export default function Recurrences() {
                       <button
                         onClick={() => generate(r)}
                         disabled={!r.active}
-                        title="Gerar lançamento"
+                        title="Gerar lançamento agora"
+                        aria-label="Gerar lançamento agora"
                         className="rounded-lg p-1.5 text-indigo-600 hover:bg-indigo-50 disabled:opacity-40"
                       >
-                        <Play size={16} />
+                        <Zap size={16} />
                       </button>
                       <button
                         onClick={() => toggle(r)}
                         title={r.active ? "Pausar" : "Reativar"}
+                        aria-label={r.active ? "Pausar" : "Reativar"}
                         className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
                       >
-                        <Pause size={16} />
+                        {r.active ? <Pause size={16} /> : <Play size={16} />}
                       </button>
                       <button
                         onClick={() => setModal({ open: true, edit: r })}

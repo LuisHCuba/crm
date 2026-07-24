@@ -73,3 +73,124 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+.form-public-root {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+/* Scrollbars finas e discretas (estilo HubSpot) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c3ccd5 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c3ccd5;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Seleção de texto na cor da marca */
+::selection {
+  background: oklch(88.2% 0.059 254.128);
+  color: #1e293b;
+}
+
+/* Foco visível para navegação por teclado */
+:focus-visible {
+  outline: 2px solid var(--color-indigo-500);
+  outline-offset: 2px;
+}
+
+/* Números alinhados em tabelas e valores */
+table,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Animações de entrada (modais, dropdowns, toasts) */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes form-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes form-success-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Formulário público — foco dinâmico via --form-primary */
+.form-public-root .form-field-input:focus,
+.form-public-root .form-field-textarea:focus,
+.form-public-root .form-field-select:focus {
+  border-color: var(--form-primary);
+  background-color: #fff;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--form-primary) 18%, transparent);
+}
+
+/* Acessibilidade: respeita preferência por menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

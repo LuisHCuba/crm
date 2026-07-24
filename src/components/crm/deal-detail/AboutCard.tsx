@@ -179,6 +179,7 @@ export function AboutCard({
     },
   ];
 
+  // Depende só de `editing`: refetch do registro não apaga o rascunho.
   useEffect(() => {
     if (editing) {
       const next: Record<string, string> = { title: deal.title ?? "" };
@@ -186,7 +187,7 @@ export function AboutCard({
       setDraft(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, deal]);
+  }, [editing]);
 
   const handleSave = () => {
     const changes: Partial<Record<DealEditableField, DealFieldValue>> = {};

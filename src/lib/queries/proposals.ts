@@ -9,10 +9,12 @@ export interface Proposal {
   title: string;
   content: string;
   password: string | null;
+  deal_id: string | null;
   archived: boolean;
   created_at: string;
   updated_at: string;
 }
+
 
 /** Resumo para a listagem (não traz o conteúdo nem a senha em claro). */
 export interface ProposalListItem {
@@ -37,6 +39,11 @@ export const PROPOSALS_LIST = gql`
       created_at
       updated_at
       password
+      deal_id
+      deal {
+        id
+        title
+      }
     }
   }
 `;
@@ -49,12 +56,14 @@ export const PROPOSAL_BY_ID = gql`
       title
       content
       password
+      deal_id
       archived
       created_at
       updated_at
     }
   }
 `;
+
 
 /**
  * Versão pública por id (rota /p/:id). Traz conteúdo e senha porque a

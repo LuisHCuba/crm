@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Scale, Link2, Upload, Check, Unlink } from "lucide-react";
+import { gql } from "graphql-request";
+import { Loader2, Scale, Link2, Upload, Check, Unlink, Search } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../../lib/graphql";
 import {
@@ -9,13 +10,49 @@ import {
   PAYABLES_QUERY,
   RECEIVABLES_FIN_QUERY,
   UPDATE_BANK_TRANSACTION,
-  UPDATE_PAYABLE,
-  UPDATE_RECEIVABLE,
   INSERT_BANK_TRANSACTIONS,
   type BankTransaction,
   type Payable,
   type Receivable,
 } from "../../lib/queries/financeiro";
+import { ErrorState } from "../../components/crm/ui";
+
+/*
+ * Conciliação em par num ÚNICO documento GraphQL: o Hasura executa os dois
+ * updates na mesma transação — ou concilia tudo, ou nada (evita extrato
+ * conciliado com lançamento ainda em aberto quando a rede falha no meio).
+ */
+const RECONCILE_TX_WITH_RECEIVABLE = gql`
+  mutation ReconcileTxWithReceivable(
+    $txId: uuid!
+    $txSet: bank_transactions_set_input!
+    $entryId: uuid!
+    $entrySet: receivables_set_input!
+  ) {
+    update_bank_transactions_by_pk(pk_columns: { id: $txId }, _set: $txSet) {
+      id
+    }
+    update_receivables_by_pk(pk_columns: { id: $entryId }, _set: $entrySet) {
+      id
+    }
+  }
+`;
+
+const RECONCILE_TX_WITH_PAYABLE = gql`
+  mutation ReconcileTxWithPayable(
+    $txId: uuid!
+    $txSet: bank_transactions_set_input!
+    $entryId: uuid!
+    $entrySet: payables_set_input!
+  ) {
+    update_bank_transactions_by_pk(pk_columns: { id: $txId }, _set: $txSet) {
+      id
+    }
+    update_payables_by_pk(pk_columns: { id: $entryId }, _set: $entrySet) {
+      id
+    }
+  }
+`;
 import { formatCurrency, formatDate } from "../../lib/format";
 import { num, round2, effectiveStatus } from "../../lib/financeiro-utils";
 import { Modal } from "../../components/financeiro/Modal";
@@ -72,14 +109,20 @@ export default function Reconciliation() {
 
   const [selTx, setSelTx] = useState<string | null>(null);
   const [selEntry, setSelEntry] = useState<string | null>(null);
+  const [entrySearch, setEntrySearch] = useState("");
   const [importOpen, setImportOpen] = useState(false);
 
   const selectedTx = txs.find((t) => t.id === selTx) ?? null;
 
   const candidateEntries = useMemo(() => {
-    if (!selectedTx) return openEntries;
+    let list = openEntries;
+    if (entrySearch.trim()) {
+      const q = entrySearch.trim().toLowerCase();
+      list = list.filter((e) => e.entry.description.toLowerCase().includes(q));
+    }
+    if (!selectedTx) return list;
     const credit = num(selectedTx.amount) >= 0;
-    return openEntries
+    return list
       .filter((e) => (credit ? e.kind === "receivable" : e.kind === "payable"))
       .sort((a, b) => {
         const target = Math.abs(num(selectedTx.amount));
@@ -87,7 +130,7 @@ export default function Reconciliation() {
           Math.abs(num(a.entry.value) - target) - Math.abs(num(b.entry.value) - target)
         );
       });
-  }, [selectedTx, openEntries]);
+  }, [selectedTx, openEntries, entrySearch]);
 
   const refetch = () => {
     qc.invalidateQueries({ queryKey: ["fin-bank-tx", activeAccountId] });
@@ -105,25 +148,32 @@ export default function Reconciliation() {
     if ((credit && ent.kind !== "receivable") || (!credit && ent.kind !== "payable"))
       return toast.error("Crédito concilia com a receber; débito com a pagar.");
     try {
-      await gqlClient.request(UPDATE_BANK_TRANSACTION, {
-        id: tx.id,
-        set: {
-          reconciled: true,
-          reconciled_at: new Date().toISOString(),
-          [ent.kind === "receivable" ? "receivable_id" : "payable_id"]: ent.entry.id,
-        },
-      });
-      await gqlClient.request(ent.kind === "receivable" ? UPDATE_RECEIVABLE : UPDATE_PAYABLE, {
-        id: ent.entry.id,
-        set: {
-          reconciled: true,
-          reconciled_at: new Date().toISOString(),
-          status: "paid",
-          payment_date: tx.date,
-          [ent.kind === "receivable" ? "received_value" : "paid_value"]: round2(Math.abs(num(tx.amount))),
-          bank_account_id: activeAccountId,
-        },
-      });
+      const now = new Date().toISOString();
+      // Um único request = uma transação no Hasura (tudo-ou-nada).
+      await gqlClient.request(
+        ent.kind === "receivable"
+          ? RECONCILE_TX_WITH_RECEIVABLE
+          : RECONCILE_TX_WITH_PAYABLE,
+        {
+          txId: tx.id,
+          txSet: {
+            reconciled: true,
+            reconciled_at: now,
+            [ent.kind === "receivable" ? "receivable_id" : "payable_id"]: ent.entry.id,
+          },
+          entryId: ent.entry.id,
+          entrySet: {
+            reconciled: true,
+            reconciled_at: now,
+            status: "paid",
+            payment_date: tx.date,
+            [ent.kind === "receivable" ? "received_value" : "paid_value"]: round2(
+              Math.abs(num(tx.amount))
+            ),
+            bank_account_id: activeAccountId,
+          },
+        }
+      );
       toast.success("Conciliado com sucesso.");
       setSelTx(null);
       setSelEntry(null);
@@ -164,6 +214,20 @@ export default function Reconciliation() {
       <div className="flex items-center gap-2 text-slate-500">
         <Loader2 className="animate-spin" size={18} /> Carregando…
       </div>
+    );
+  }
+
+  if (accountsQ.error || payablesQ.error || receivablesQ.error || txQ.error) {
+    return (
+      <ErrorState
+        label="Não foi possível carregar os dados da conciliação."
+        onRetry={() => {
+          accountsQ.refetch();
+          payablesQ.refetch();
+          receivablesQ.refetch();
+          txQ.refetch();
+        }}
+      />
     );
   }
 
@@ -254,6 +318,7 @@ export default function Reconciliation() {
                       </span>
                       <button
                         title="Conciliar sem vínculo"
+                        aria-label="Conciliar sem vínculo"
                         onClick={(e) => {
                           e.stopPropagation();
                           reconcileAlone(t);
@@ -271,8 +336,24 @@ export default function Reconciliation() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-100 px-5 py-3 text-sm font-semibold text-slate-700">
-            Lançamentos em aberto {selectedTx && <span className="text-indigo-500">· compatíveis</span>}
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
+            <span className="shrink-0 text-sm font-semibold text-slate-700">
+              Lançamentos em aberto{" "}
+              {selectedTx && <span className="text-indigo-500">· compatíveis</span>}
+            </span>
+            <div className="relative w-44">
+              <Search
+                size={13}
+                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                value={entrySearch}
+                onChange={(e) => setEntrySearch(e.target.value)}
+                placeholder="Filtrar…"
+                aria-label="Filtrar lançamentos em aberto"
+                className="w-full rounded-md border border-slate-200 py-1 pl-7 pr-2 text-xs outline-none transition focus:border-indigo-400"
+              />
+            </div>
           </div>
           {candidateEntries.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-slate-500">

@@ -7,7 +7,7 @@ import { ARCHIVE_USER, USERS_ADMIN_LIST } from "../lib/queries";
 import { formatDate } from "../lib/format";
 import { PageHeader } from "../components/PageHeader";
 import { UserForm, type AdminUser } from "../components/crm/UserForm";
-import { Avatar, Badge, EmptyState, ErrorState, Loading } from "../components/crm/ui";
+import { Avatar, Badge, EmptyState, ErrorState, SkeletonRows } from "../components/crm/ui";
 import { useAuth } from "../store/auth";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -116,7 +116,11 @@ export default function Users() {
           />
         </div>
 
-        {isLoading && <Loading />}
+        {isLoading && (
+          <div className="rounded-xl border border-slate-200 bg-white">
+            <SkeletonRows />
+          </div>
+        )}
         {error && <ErrorState label="Erro ao carregar usuários." />}
 
         {data && filtered.length === 0 && (

@@ -63,6 +63,8 @@ export default function Financeiro() {
       <div className="p-8">
         <Routes>
           <Route index element={<Overview />} />
+          {/* Unificada com a Visão geral — redirect para links antigos. */}
+          <Route path="linha-do-tempo" element={<Navigate to="/financeiro" replace />} />
           <Route path="pagar" element={<Payables />} />
           <Route path="receber" element={<ReceivablesFin />} />
           <Route path="recorrencias" element={<Recurrences />} />

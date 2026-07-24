@@ -5,18 +5,14 @@ import { Archive, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../lib/graphql";
 import {
-  COMPANIES_MINI_DETAIL,
   CONTACT_DETAIL_FULL,
-  DEALS_MINI_DETAIL,
   LINK_CONTACT_COMPANY_DETAIL,
   LINK_DEAL_CONTACT_DETAIL,
   UNLINK_CONTACT_COMPANY_DETAIL,
   UNLINK_DEAL_CONTACT_DETAIL,
   UPDATE_CONTACT_DETAIL,
-  type CompanyMini,
   type ContactDetailData,
   type ContactEditableField,
-  type DealMini,
 } from "../lib/queries/contact-detail";
 import { ARCHIVE_CONTACT, USERS_LIST, type UserRef } from "../lib/queries/crm";
 import { logActivity, describeChanges } from "../lib/activity-log";
@@ -66,26 +62,19 @@ export default function ContactDetail() {
     queryFn: () => gqlClient.request<{ users: UserRef[] }>(USERS_LIST),
   });
 
-  const { data: companiesData } = useQuery({
-    queryKey: ["companies-mini-detail"],
-    queryFn: () =>
-      gqlClient.request<{ companies: CompanyMini[] }>(COMPANIES_MINI_DETAIL),
-  });
-
-  const { data: dealsData } = useQuery({
-    queryKey: ["deals-mini-detail"],
-    queryFn: () => gqlClient.request<{ deals: DealMini[] }>(DEALS_MINI_DETAIL),
-  });
-
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["contact-detail", id] });
 
-  const companyName = (cid: string) => {
-    const co = companiesData?.companies.find((c) => c.id === cid);
+  // Nome para logs de desvinculação: vem dos vínculos já carregados.
+  const linkedCompanyName = (cid: string) => {
+    const co = data?.contacts_by_pk?.contact_companies?.find(
+      (cc) => cc.company.id === cid
+    )?.company;
     return co ? co.trade_name || co.legal_name : "empresa";
   };
-  const dealName = (did: string) =>
-    dealsData?.deals.find((d) => d.id === did)?.title ?? "negócio";
+  const linkedDealName = (did: string) =>
+    data?.contacts_by_pk?.deal_contacts?.find((dc) => dc.deal.id === did)?.deal
+      .title ?? "negócio";
 
   const saveAll = useMutation({
     mutationFn: async (
@@ -117,13 +106,19 @@ export default function ContactDetail() {
   };
 
   const linkCompany = useMutation({
-    mutationFn: async (company_id: string) => {
+    mutationFn: async ({
+      company_id,
+      label,
+    }: {
+      company_id: string;
+      label?: string;
+    }) => {
       await gqlClient.request(LINK_CONTACT_COMPANY_DETAIL, {
         contact_id: id,
         company_id,
       });
       await logActivity({
-        title: `Empresa vinculada: ${companyName(company_id)}`,
+        title: `Empresa vinculada: ${label ?? "empresa"}`,
         link: { contactId: id, companyId: company_id },
       });
     },
@@ -141,7 +136,7 @@ export default function ContactDetail() {
         company_id,
       });
       await logActivity({
-        title: `Empresa desvinculada: ${companyName(company_id)}`,
+        title: `Empresa desvinculada: ${linkedCompanyName(company_id)}`,
         link: { contactId: id, companyId: company_id },
       });
     },
@@ -153,13 +148,19 @@ export default function ContactDetail() {
   });
 
   const linkDeal = useMutation({
-    mutationFn: async (deal_id: string) => {
+    mutationFn: async ({
+      deal_id,
+      label,
+    }: {
+      deal_id: string;
+      label?: string;
+    }) => {
       await gqlClient.request(LINK_DEAL_CONTACT_DETAIL, {
         deal_id,
         contact_id: id,
       });
       await logActivity({
-        title: `Negócio vinculado: ${dealName(deal_id)}`,
+        title: `Negócio vinculado: ${label ?? "negócio"}`,
         link: { contactId: id, dealId: deal_id },
       });
     },
@@ -177,7 +178,7 @@ export default function ContactDetail() {
         contact_id: id,
       });
       await logActivity({
-        title: `Negócio desvinculado: ${dealName(deal_id)}`,
+        title: `Negócio desvinculado: ${linkedDealName(deal_id)}`,
         link: { contactId: id, dealId: deal_id },
       });
     },
@@ -220,17 +221,6 @@ export default function ContactDetail() {
     );
 
   const c = data.contacts_by_pk;
-
-  const linkedCompanyIds = new Set(
-    c.contact_companies?.map((cc) => cc.company.id) ?? []
-  );
-  const linkedDealIds = new Set(c.deal_contacts?.map((dc) => dc.deal.id) ?? []);
-  const availableCompanies = (companiesData?.companies ?? []).filter(
-    (co) => !linkedCompanyIds.has(co.id)
-  );
-  const availableDeals = (dealsData?.deals ?? []).filter(
-    (d) => !linkedDealIds.has(d.id)
-  );
 
   const busyAssoc =
     linkCompany.isPending ||
@@ -303,11 +293,13 @@ export default function ContactDetail() {
         <div>
           <Associations
             contact={c}
-            availableCompanies={availableCompanies}
-            availableDeals={availableDeals}
-            onLinkCompany={(cid) => linkCompany.mutate(cid)}
+            onLinkCompany={(cid, label) =>
+              linkCompany.mutate({ company_id: cid, label })
+            }
             onUnlinkCompany={(cid) => unlinkCompany.mutate(cid)}
-            onLinkDeal={(did) => linkDeal.mutate(did)}
+            onLinkDeal={(did, label) =>
+              linkDeal.mutate({ deal_id: did, label })
+            }
             onUnlinkDeal={(did) => unlinkDeal.mutate(did)}
             busy={busyAssoc}
           />

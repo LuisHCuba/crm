@@ -9,6 +9,7 @@ import {
   Pencil,
   Wallet,
 } from "lucide-react";
+import { ErrorState, Skeleton } from "../../components/crm/ui";
 import { toast } from "sonner";
 import { gqlClient } from "../../lib/graphql";
 import {
@@ -45,7 +46,7 @@ const ACCOUNT_TYPES: Record<string, string> = {
 
 export default function BankAccounts() {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["fin-bank-accounts"],
     queryFn: () => gqlClient.request<{ bank_accounts: AccountRow[] }>(BANK_ACCOUNTS_QUERY),
   });
@@ -72,9 +73,29 @@ export default function BankAccounts() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-slate-500">
-        <Loader2 className="animate-spin" size={18} /> Carregando contas…
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="rounded-xl border border-slate-200 bg-white p-4">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="mt-3 h-7 w-28" />
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="mt-4 h-48 w-full" />
+        </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        label="Não foi possível carregar as contas."
+        onRetry={() => refetch()}
+      />
     );
   }
 
@@ -108,10 +129,19 @@ export default function BankAccounts() {
               const bal = balanceOf(a);
               const active = selected?.id === a.id;
               return (
-                <button
+                <div
                   key={a.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedId(a.id)}
-                  className={`w-full rounded-xl border p-4 text-left transition-colors ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedId(a.id);
+                    }
+                  }}
+                  aria-pressed={active}
+                  className={`w-full cursor-pointer rounded-xl border p-4 text-left transition-colors ${
                     active
                       ? "border-indigo-400 bg-indigo-50/50 ring-1 ring-indigo-200"
                       : "border-slate-200 bg-white hover:border-slate-300"
@@ -130,22 +160,29 @@ export default function BankAccounts() {
                         </p>
                       </div>
                     </div>
-                    <Pencil
-                      size={15}
-                      className="text-slate-400 hover:text-slate-600"
+                    <button
+                      type="button"
+                      title="Editar conta"
+                      aria-label={`Editar conta ${a.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setAccountModal({ open: true, edit: a });
                       }}
-                    />
+                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    >
+                      <Pencil size={15} />
+                    </button>
                   </div>
-                  <p className={`mt-3 text-xl font-bold ${bal >= 0 ? "text-slate-900" : "text-red-600"}`}>
+                  <p
+                    className={`mt-3 text-xl font-bold ${bal >= 0 ? "text-slate-900" : "text-red-600"}`}
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                  >
                     {formatCurrency(bal)}
                   </p>
                   <p className="text-xs text-slate-400">
                     {a.transactions_aggregate.aggregate.count} movimentação(ões)
                   </p>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -290,6 +327,8 @@ function Statement({
                   <td className="px-5 py-3 text-right">
                     <button
                       onClick={() => remove(t.id)}
+                      title="Excluir movimentação"
+                      aria-label="Excluir movimentação"
                       className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 size={15} />

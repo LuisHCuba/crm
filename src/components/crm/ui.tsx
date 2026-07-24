@@ -1,5 +1,7 @@
-import { type ReactNode } from "react";
-import { Loader2, X } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
+import { Loader2, RefreshCw, X } from "lucide-react";
+import { ModalOverlay } from "../chrome/OverlayPortal";
+import { OVERLAY_PANEL_MAX_H_CLASS } from "../chrome/overlays";
 import { initials } from "./labels";
 
 /* ------------------------------------------------------------------ */
@@ -14,10 +16,50 @@ export function Loading({ label = "Carregando..." }: { label?: string }) {
   );
 }
 
-export function ErrorState({ label = "Erro ao carregar." }: { label?: string }) {
+/** Bloco cinza pulsante para carregamento (estilo HubSpot). */
+export function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-      {label}
+    <div
+      aria-hidden
+      className={`animate-pulse rounded-md bg-slate-200/70 ${className}`}
+    />
+  );
+}
+
+/** Grade de linhas skeleton para tabelas/listas. */
+export function SkeletonRows({ rows = 6 }: { rows?: number }) {
+  return (
+    <div className="space-y-3 p-4">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ErrorState({
+  label = "Não foi possível carregar os dados.",
+  onRetry,
+}: {
+  label?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+      <span className="text-sm">{label}</span>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="flex shrink-0 items-center gap-1.5 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-100"
+        >
+          <RefreshCw size={14} /> Tentar novamente
+        </button>
+      )}
     </div>
   );
 }
@@ -112,20 +154,36 @@ export function Modal({
 }) {
   const max =
     size === "xl" ? "max-w-3xl" : size === "lg" ? "max-w-xl" : "max-w-md";
+
+  // Esc fecha; enquanto aberto, trava o scroll da página atrás.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  // Clique no backdrop NÃO fecha: modais carregam formulários e um clique
+  // acidental fora descartaria o trabalho. Fecha só no X ou com Esc.
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 py-10"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <ModalOverlay>
       <div
-        className={`w-full ${max} rounded-2xl bg-white p-6 shadow-xl`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`my-auto w-full ${max} ${OVERLAY_PANEL_MAX_H_CLASS} overflow-y-auto rounded-2xl bg-white p-6 shadow-xl animate-[modal-in_.18s_ease-out]`}
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900">{title}</h2>
           <button
             onClick={onClose}
+            aria-label="Fechar"
             className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
           >
             <X size={20} />
@@ -133,7 +191,7 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </ModalOverlay>
   );
 }
 

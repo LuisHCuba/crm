@@ -136,7 +136,9 @@ export function AboutCard({
 
   const [draft, setDraft] = useState<Record<string, string>>({});
 
-  // Ao entrar em modo de edição, inicializa o rascunho com os valores atuais.
+  // Ao ENTRAR em modo de edição, inicializa o rascunho com os valores atuais.
+  // Depende só de `editing`: um refetch do registro (ex.: nova atividade na
+  // timeline) não pode apagar o que o usuário está digitando.
   useEffect(() => {
     if (editing) {
       const next: Record<string, string> = {};
@@ -144,7 +146,7 @@ export function AboutCard({
       setDraft(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, contact]);
+  }, [editing]);
 
   const handleSave = () => {
     const changes: Partial<Record<ContactEditableField, string | null>> = {};

@@ -7,7 +7,13 @@ import {
   UPDATE_PROPOSAL,
   type Proposal,
 } from "../../lib/queries/proposals";
+import {
+  fetchDealOption,
+  searchDeals,
+  type SearchOption,
+} from "../../lib/entity-search";
 import { proposalToSrcDoc } from "../../lib/proposal-render";
+import { SearchSelect } from "./SearchSelect";
 import { Modal, SubmitButton } from "./ui";
 
 const inputClass =
@@ -15,10 +21,13 @@ const inputClass =
 
 export function ProposalForm({
   proposal,
+  defaultDealId,
   onClose,
   onSaved,
 }: {
   proposal?: Proposal;
+  /** Pré-seleciona o negócio (ex.: criação a partir da página do negócio). */
+  defaultDealId?: string;
   onClose: () => void;
   onSaved: (newId?: string) => void;
 }) {
@@ -26,6 +35,17 @@ export function ProposalForm({
   const [title, setTitle] = useState(proposal?.title ?? "");
   const [content, setContent] = useState(proposal?.content ?? "");
   const [password, setPassword] = useState(proposal?.password ?? "");
+  // Negócio vinculado — busca no servidor; rótulo inicial via by_pk.
+  const [deal, setDeal] = useState<SearchOption | null>(null);
+  useEffect(() => {
+    const did = proposal?.deal_id ?? defaultDealId;
+    if (did) {
+      fetchDealOption(did).then((opt) => {
+        if (opt) setDeal(opt);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Preview com pequeno debounce para não regerar o srcDoc a cada tecla.
   const [debounced, setDebounced] = useState(content);
@@ -45,6 +65,7 @@ export function ProposalForm({
         title: title.trim(),
         content,
         password: password.trim() ? password : null,
+        deal_id: deal?.id ?? null,
       };
       if (editing) {
         await gqlClient.request(UPDATE_PROPOSAL, {
@@ -109,6 +130,20 @@ export function ProposalForm({
               Em branco = qualquer pessoa com o link acessa.
             </p>
           </div>
+        </div>
+
+        <div>
+          <SearchSelect
+            label="Negócio vinculado"
+            value={deal}
+            onChange={setDeal}
+            loadOptions={(q) => searchDeals(q)}
+            placeholder="Sem vínculo"
+            searchPlaceholder="Buscar negócio..."
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            A proposta aparece no card "Propostas" da página do negócio.
+          </p>
         </div>
 
         <div>

@@ -7,13 +7,13 @@ import { gqlClient } from "../lib/graphql";
 import {
   ARCHIVE_DEAL_DETAIL,
   COMPANIES_MINI_DEAL_DETAIL,
-  CONTACTS_MINI_DEAL_DETAIL,
   DEAL_DETAIL_FULL,
   LINK_DEAL_CONTACT_DETAIL,
+  LINK_DEAL_PROPOSAL,
   UNLINK_DEAL_CONTACT_DETAIL,
+  UNLINK_DEAL_PROPOSAL,
   UPDATE_DEAL_DETAIL,
   type DealCompanyRef,
-  type DealContactMini,
   type DealDetailData,
   type DealEditableField,
   type DealFieldValue,
@@ -76,14 +76,6 @@ export default function DealDetail() {
     queryFn: () => gqlClient.request<{ users: UserRef[] }>(USERS_LIST),
   });
 
-  const { data: contactsData } = useQuery({
-    queryKey: ["contacts-mini-deal-detail"],
-    queryFn: () =>
-      gqlClient.request<{ contacts: DealContactMini[] }>(
-        CONTACTS_MINI_DEAL_DETAIL
-      ),
-  });
-
   const { data: companiesData } = useQuery({
     queryKey: ["companies-mini-deal-detail"],
     queryFn: () =>
@@ -95,14 +87,18 @@ export default function DealDetail() {
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["deal-detail", id] });
     queryClient.invalidateQueries({ queryKey: ["deals-board"] });
+    queryClient.invalidateQueries({ queryKey: ["proposals"] });
+    queryClient.invalidateQueries({ queryKey: ["companies-mini-deal-detail"] });
   };
 
   const d = data?.deals_by_pk ?? null;
   const stages = data?.pipeline_stages ?? [];
   const pipelines = data?.pipelines ?? [];
 
-  const contactName = (cid: string) =>
-    contactsData?.contacts.find((c) => c.id === cid)?.full_name ?? "contato";
+  // Nome para logs: vem do próprio registro carregado (vínculos atuais).
+  const linkedContactName = (cid: string) =>
+    d?.deal_contacts?.find((dc) => dc.contact.id === cid)?.contact.full_name ??
+    "contato";
   const companyName = (cid: string) => {
     const co = companiesData?.companies.find((c) => c.id === cid);
     return co ? co.trade_name || co.legal_name : "empresa";
@@ -217,14 +213,20 @@ export default function DealDetail() {
   };
 
   const setCompany = useMutation({
-    mutationFn: async (companyId: string | null) => {
+    mutationFn: async ({
+      companyId,
+      label,
+    }: {
+      companyId: string | null;
+      label?: string;
+    }) => {
       await gqlClient.request(UPDATE_DEAL_DETAIL, {
         id,
         set: { company_id: companyId },
       });
       await logActivity({
         title: companyId
-          ? `Empresa vinculada: ${companyName(companyId)}`
+          ? `Empresa vinculada: ${label ?? companyName(companyId)}`
           : "Empresa removida do negócio",
         link: { dealId: id, companyId: companyId ?? undefined },
       });
@@ -237,13 +239,19 @@ export default function DealDetail() {
   });
 
   const linkContact = useMutation({
-    mutationFn: async (contact_id: string) => {
+    mutationFn: async ({
+      contact_id,
+      label,
+    }: {
+      contact_id: string;
+      label?: string;
+    }) => {
       await gqlClient.request(LINK_DEAL_CONTACT_DETAIL, {
         deal_id: id,
         contact_id,
       });
       await logActivity({
-        title: `Contato vinculado: ${contactName(contact_id)}`,
+        title: `Contato vinculado: ${label ?? "contato"}`,
         link: { dealId: id, contactId: contact_id },
       });
     },
@@ -256,12 +264,13 @@ export default function DealDetail() {
 
   const unlinkContact = useMutation({
     mutationFn: async (contact_id: string) => {
+      const name = linkedContactName(contact_id);
       await gqlClient.request(UNLINK_DEAL_CONTACT_DETAIL, {
         deal_id: id,
         contact_id,
       });
       await logActivity({
-        title: `Contato desvinculado: ${contactName(contact_id)}`,
+        title: `Contato desvinculado: ${name}`,
         link: { dealId: id, contactId: contact_id },
       });
     },
@@ -272,6 +281,49 @@ export default function DealDetail() {
     onError: () => toast.error("Erro ao desvincular contato"),
   });
 
+  const linkedProposalTitle = (pid: string) =>
+    d?.proposals?.find((p) => p.id === pid)?.title ?? "proposta";
+
+  const linkProposal = useMutation({
+    mutationFn: async ({
+      proposal_id,
+      label,
+    }: {
+      proposal_id: string;
+      label?: string;
+    }) => {
+      await gqlClient.request(LINK_DEAL_PROPOSAL, {
+        proposal_id,
+        deal_id: id,
+      });
+      await logActivity({
+        title: `Proposta vinculada: ${label ?? "proposta"}`,
+        link: { dealId: id },
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Proposta vinculada");
+    },
+    onError: () => toast.error("Erro ao vincular proposta"),
+  });
+
+  const unlinkProposal = useMutation({
+    mutationFn: async (proposal_id: string) => {
+      const title = linkedProposalTitle(proposal_id);
+      await gqlClient.request(UNLINK_DEAL_PROPOSAL, { proposal_id });
+      await logActivity({
+        title: `Proposta desvinculada: ${title}`,
+        link: { dealId: id },
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Proposta desvinculada");
+    },
+    onError: () => toast.error("Erro ao desvincular proposta"),
+  });
+
   const archiveDeal = useMutation({
     mutationFn: async () => {
       await gqlClient.request(ARCHIVE_DEAL_DETAIL, { id });
@@ -279,6 +331,8 @@ export default function DealDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deals-board"] });
+      queryClient.invalidateQueries({ queryKey: ["deals-page"] });
+      queryClient.invalidateQueries({ queryKey: ["deals-total"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Negócio arquivado");
       navigate("/negocios");
@@ -299,15 +353,12 @@ export default function DealDetail() {
       </div>
     );
 
-  const linkedContactIds = new Set(
-    d.deal_contacts?.map((dc) => dc.contact.id) ?? []
-  );
-  const availableContacts = (contactsData?.contacts ?? []).filter(
-    (c) => !linkedContactIds.has(c.id)
-  );
-
   const busyAssoc =
-    linkContact.isPending || unlinkContact.isPending || setCompany.isPending;
+    linkContact.isPending ||
+    unlinkContact.isPending ||
+    setCompany.isPending ||
+    linkProposal.isPending ||
+    unlinkProposal.isPending;
 
   const confirmArchive = () => {
     if (confirm(`Arquivar o negócio "${d.title}"?`)) archiveDeal.mutate();
@@ -385,11 +436,17 @@ export default function DealDetail() {
         <div>
           <Associations
             deal={d}
-            availableContacts={availableContacts}
-            companies={companiesData?.companies ?? []}
-            onLinkContact={(cid) => linkContact.mutate(cid)}
+            onLinkContact={(cid, label) =>
+              linkContact.mutate({ contact_id: cid, label })
+            }
             onUnlinkContact={(cid) => unlinkContact.mutate(cid)}
-            onSetCompany={(companyId) => setCompany.mutate(companyId)}
+            onSetCompany={(companyId, label) =>
+              setCompany.mutate({ companyId, label })
+            }
+            onLinkProposal={(pid, label) =>
+              linkProposal.mutate({ proposal_id: pid, label })
+            }
+            onUnlinkProposal={(pid) => unlinkProposal.mutate(pid)}
             onLineItemsChanged={invalidate}
             busy={busyAssoc}
           />

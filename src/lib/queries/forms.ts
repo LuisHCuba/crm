@@ -131,6 +131,9 @@ export const FORMS_LIST = gql`
       created_at
       updated_at
     }
+    form_submissions {
+      form_id
+    }
   }
 `;
 
@@ -144,6 +147,66 @@ export const FORM_BY_ID = gql`
       archived
       created_at
       updated_at
+    }
+  }
+`;
+
+/** Formulário + contagem de respostas (detalhe). */
+export const FORM_DETAIL_QUERY = gql`
+  query FormDetail($id: uuid!) {
+    forms_by_pk(id: $id) {
+      id
+      title
+      status
+      definition
+      archived
+      created_at
+      updated_at
+    }
+    form_submissions_aggregate(where: { form_id: { _eq: $id } }) {
+      aggregate {
+        count
+      }
+    }
+  }
+`;
+
+export interface FormSubmission {
+  id: string;
+  form_id: string;
+  contact_id: string | null;
+  data: Record<string, string | string[]>;
+  created_at: string;
+  contact?: {
+    id: string;
+    full_name: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
+}
+
+export const FORM_SUBMISSIONS_QUERY = gql`
+  query FormSubmissions($formId: uuid!) {
+    form_submissions(
+      where: { form_id: { _eq: $formId } }
+      order_by: { created_at: desc }
+    ) {
+      id
+      form_id
+      contact_id
+      data
+      created_at
+    }
+  }
+`;
+
+export const CONTACTS_BY_IDS = gql`
+  query ContactsByIds($ids: [uuid!]!) {
+    contacts(where: { id: { _in: $ids } }) {
+      id
+      full_name
+      email
+      phone
     }
   }
 `;

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -10,6 +11,7 @@ import {
   Lock,
   Globe,
   ExternalLink,
+  Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../lib/graphql";
@@ -22,7 +24,7 @@ import {
 import { formatDate } from "../lib/format";
 import { PageHeader } from "../components/PageHeader";
 import { ProposalForm } from "../components/crm/ProposalForm";
-import { Badge, EmptyState, ErrorState, Loading } from "../components/crm/ui";
+import { Badge, EmptyState, ErrorState, SkeletonRows } from "../components/crm/ui";
 
 interface ProposalRow {
   id: string;
@@ -31,6 +33,8 @@ interface ProposalRow {
   created_at: string;
   updated_at: string;
   password: string | null;
+  deal_id: string | null;
+  deal: { id: string; title: string } | null;
 }
 
 function publicLink(id: string) {
@@ -67,8 +71,12 @@ export default function Propostas() {
     return list.filter((p) => p.title.toLowerCase().includes(q));
   }, [data, search]);
 
-  const invalidate = () =>
+  const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["proposals"] });
+    // O vínculo com negócio reflete nas telas de negócio.
+    queryClient.invalidateQueries({ queryKey: ["deal-detail"] });
+    queryClient.invalidateQueries({ queryKey: ["proposals-mini-unlinked"] });
+  };
 
   const copyLink = async (id: string) => {
     const url = publicLink(id);
@@ -127,7 +135,11 @@ export default function Propostas() {
           />
         </div>
 
-        {isLoading && <Loading />}
+        {isLoading && (
+          <div className="rounded-xl border border-slate-200 bg-white">
+            <SkeletonRows />
+          </div>
+        )}
         {error && <ErrorState label="Erro ao carregar propostas." />}
 
         {data && filtered.length === 0 && (
@@ -153,6 +165,7 @@ export default function Propostas() {
               <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-5 py-3">Título</th>
+                  <th className="px-5 py-3">Negócio</th>
                   <th className="px-5 py-3">Acesso</th>
                   <th className="px-5 py-3">Atualizada</th>
                   <th className="px-5 py-3"></th>
@@ -164,6 +177,22 @@ export default function Propostas() {
                     <td className="px-5 py-3">
                       <p className="font-medium text-slate-900">{p.title}</p>
                       <p className="text-xs text-slate-400">/p/{p.id}</p>
+                    </td>
+                    <td className="px-5 py-3">
+                      {p.deal ? (
+                        <RouterLink
+                          to={`/negocios/${p.deal.id}`}
+                          className="inline-flex max-w-[220px] items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100"
+                          title={p.deal.title}
+                        >
+                          <Briefcase size={12} className="shrink-0" />
+                          <span className="truncate">{p.deal.title}</span>
+                        </RouterLink>
+                      ) : (
+                        <span className="text-xs text-slate-400">
+                          Sem vínculo
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3">
                       {p.password ? (
@@ -205,7 +234,10 @@ export default function Propostas() {
                           <Pencil size={16} />
                         </button>
                         <button
-                          onClick={() => archiveMutation.mutate(p.id)}
+                          onClick={() => {
+                            if (confirm(`Arquivar a proposta "${p.title}"?`))
+                              archiveMutation.mutate(p.id);
+                          }}
                           disabled={archiveMutation.isPending}
                           className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                           title="Arquivar"

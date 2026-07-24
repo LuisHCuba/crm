@@ -13,6 +13,9 @@ import Products from "./pages/Products";
 import Propostas from "./pages/Propostas";
 import PublicProposal from "./pages/PublicProposal";
 import Forms from "./pages/Forms";
+import { FormDetailLayout } from "./pages/FormDetailLayout";
+import FormOverview from "./pages/FormOverview";
+import FormSubmissions from "./pages/FormSubmissions";
 import FormBuilder from "./pages/FormBuilder";
 import PublicForm from "./pages/PublicForm";
 import Financeiro from "./pages/financeiro/Financeiro";
@@ -51,7 +54,11 @@ export default function App() {
         <Route path="produtos" element={<Products />} />
         <Route path="propostas" element={<Propostas />} />
         <Route path="formularios" element={<Forms />} />
-        <Route path="formularios/:id" element={<FormBuilder />} />
+        <Route path="formularios/:id" element={<FormDetailLayout />}>
+          <Route index element={<FormOverview />} />
+          <Route path="respostas" element={<FormSubmissions />} />
+          <Route path="editar" element={<FormBuilder />} />
+        </Route>
         <Route path="financeiro/*" element={<Financeiro />} />
         <Route path="usuarios" element={<Users />} />
         <Route path="perfil" element={<Profile />} />

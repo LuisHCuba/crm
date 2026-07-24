@@ -19,7 +19,7 @@ import {
   type UserRef,
 } from "../lib/queries/crm";
 import { formatCount } from "../components/crm/labels";
-import { EmptyState, ErrorState } from "../components/crm/ui";
+import { EmptyState, ErrorState, SkeletonRows } from "../components/crm/ui";
 import {
   FilterPill,
   SearchBox,
@@ -73,6 +73,7 @@ export default function Deals() {
   const [pipelineId, setPipelineId] = useState("");
 
   // filtros
+  const [viewTab, setViewTab] = useState("all");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [owner, setOwner] = useState("");
@@ -105,7 +106,7 @@ export default function Deals() {
   useEffect(() => {
     setPage(1);
     setSelected(new Set());
-  }, [debounced, owner, createdPreset, activityPreset, closedPreset, perPage, pipelineId]);
+  }, [debounced, owner, createdPreset, activityPreset, closedPreset, perPage, pipelineId, viewTab]);
 
   const { data: usersData } = useQuery({
     queryKey: ["users-mini"],
@@ -136,6 +137,10 @@ export default function Deals() {
   const where = useMemo(() => {
     const w: Record<string, unknown> = { archived: { _eq: false } };
     if (activePipeline) w.pipeline_id = { _eq: activePipeline };
+    // Visões (abas): filtram pelo tipo do estágio no servidor.
+    if (viewTab === "open") w.stage = { type: { _nin: ["won", "lost"] } };
+    else if (viewTab === "won") w.stage = { type: { _eq: "won" } };
+    else if (viewTab === "lost") w.stage = { type: { _eq: "lost" } };
     if (owner === "__none") w.responsible_id = { _is_null: true };
     else if (owner) w.responsible_id = { _eq: owner };
     if (debounced) w.title = { _ilike: `%${debounced}%` };
@@ -146,7 +151,7 @@ export default function Deals() {
     const act = datePresetToRange(activityPreset);
     if (act) w.activities = { created_at: act };
     return w;
-  }, [activePipeline, owner, debounced, createdPreset, closedPreset, activityPreset]);
+  }, [activePipeline, viewTab, owner, debounced, createdPreset, closedPreset, activityPreset]);
 
   const boardKey = ["deals-board", where] as const;
 
@@ -180,8 +185,12 @@ export default function Deals() {
   };
 
   const moveMutation = useMutation({
-    mutationFn: (vars: { id: string; set: Record<string, unknown> }) =>
-      gqlClient.request(UPDATE_DEAL, vars),
+    mutationFn: (vars: {
+      id: string;
+      set: Record<string, unknown>;
+      deal: DealListItem;
+      stage: Stage;
+    }) => gqlClient.request(UPDATE_DEAL, { id: vars.id, set: vars.set }),
     onMutate: async ({ id, set }) => {
       await queryClient.cancelQueries({ queryKey: boardKey });
       const prev = queryClient.getQueryData<BoardData>(boardKey);
@@ -193,6 +202,43 @@ export default function Deals() {
         });
       }
       return { prev };
+    },
+    // Auditoria + automação só DEPOIS de o servidor confirmar a mudança —
+    // um rollback não pode deixar contatos promovidos nem histórico falso.
+    onSuccess: (_res, { deal, stage }) => {
+      void logActivity({
+        title: `Negócio movido para "${stage.name}"`,
+        link: { dealId: deal.id, companyId: deal.company?.id ?? undefined },
+      });
+      if (stage.type === "won") {
+        void logActivity({
+          title: "Negócio marcado como GANHO",
+          link: { dealId: deal.id },
+        });
+        void gqlClient
+          .request<{ update_contacts: { returning: { id: string }[] } }>(
+            PROMOTE_DEAL_CONTACTS_ACTIVE_CLIENT,
+            { dealId: deal.id }
+          )
+          .then((res) =>
+            Promise.all(
+              res.update_contacts.returning.map((c) =>
+                logActivity({
+                  title: "Contato promovido a Cliente ativo (negócio ganho)",
+                  link: { contactId: c.id, dealId: deal.id },
+                })
+              )
+            )
+          )
+          .catch((e) =>
+            console.error("Falha na automação de ciclo de vida:", e)
+          );
+      } else if (stage.type === "lost") {
+        void logActivity({
+          title: "Negócio marcado como PERDIDO",
+          link: { dealId: deal.id },
+        });
+      }
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) queryClient.setQueryData(boardKey, ctx.prev);
@@ -214,42 +260,7 @@ export default function Deals() {
       set.closed_at = null;
       set.loss_reason = null;
     }
-    moveMutation.mutate({ id: deal.id, set });
-
-    // Auditoria + automação de ciclo de vida (estilo HubSpot).
-    void logActivity({
-      title: `Negócio movido para "${stage.name}"`,
-      link: { dealId: deal.id, companyId: deal.company?.id ?? undefined },
-    });
-    if (stage.type === "won") {
-      void logActivity({
-        title: "Negócio marcado como GANHO",
-        link: { dealId: deal.id },
-      });
-      void gqlClient
-        .request<{ update_contacts: { returning: { id: string }[] } }>(
-          PROMOTE_DEAL_CONTACTS_ACTIVE_CLIENT,
-          { dealId: deal.id }
-        )
-        .then((res) =>
-          Promise.all(
-            res.update_contacts.returning.map((c) =>
-              logActivity({
-                title: "Contato promovido a Cliente ativo (negócio ganho)",
-                link: { contactId: c.id, dealId: deal.id },
-              })
-            )
-          )
-        )
-        .catch((e) =>
-          console.error("Falha na automação de ciclo de vida:", e)
-        );
-    } else if (stage.type === "lost") {
-      void logActivity({
-        title: "Negócio marcado como PERDIDO",
-        link: { dealId: deal.id },
-      });
-    }
+    moveMutation.mutate({ id: deal.id, set, deal, stage });
   };
 
   const onMoveRequest = (deal: DealListItem, stage: Stage) => {
@@ -308,6 +319,9 @@ export default function Deals() {
         ? formatCount(totalCount.deals_aggregate.aggregate.count)
         : undefined,
     },
+    { id: "open", label: "Em aberto" },
+    { id: "won", label: "Ganhos" },
+    { id: "lost", label: "Perdidos" },
   ];
 
   const ownerOptions = [
@@ -345,7 +359,7 @@ export default function Deals() {
         </button>
       </div>
 
-      <ViewTabs tabs={tabs} activeId="all" onSelect={() => {}} />
+      <ViewTabs tabs={tabs} activeId={viewTab} onSelect={setViewTab} />
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col gap-3 p-5">
@@ -429,7 +443,14 @@ export default function Deals() {
           {view === "table" && selected.size > 0 && (
             <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
               <button
-                onClick={() => archiveBulk.mutate([...selected])}
+                onClick={() => {
+                  if (
+                    confirm(
+                      `Arquivar ${selected.size} negócio${selected.size > 1 ? "s" : ""}?`
+                    )
+                  )
+                    archiveBulk.mutate([...selected]);
+                }}
                 disabled={archiveBulk.isPending}
                 className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
               >
@@ -442,8 +463,8 @@ export default function Deals() {
           {error ? (
             <ErrorState label="Erro ao carregar negócios." />
           ) : isLoading ? (
-            <div className="flex items-center gap-2 py-10 text-slate-500">
-              <Loader2 className="animate-spin" size={18} /> Carregando...
+            <div className="rounded-xl border border-slate-200 bg-white">
+              <SkeletonRows rows={8} />
             </div>
           ) : isEmpty ? (
             <EmptyState

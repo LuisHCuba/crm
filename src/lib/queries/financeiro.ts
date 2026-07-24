@@ -95,6 +95,7 @@ export interface BankTransaction {
   receivable_id: string | null;
   transfer_group: string | null;
   memo: string | null;
+  bank_account?: { id: string; name: string } | null;
   payable?: { id: string; description: string } | null;
   receivable?: { id: string; description: string } | null;
 }
@@ -139,15 +140,6 @@ export const FIN_REFERENCE_QUERY = gql`
     }
     bank_accounts(where: { archived: { _eq: false } }, order_by: { name: asc }) {
       id name bank_name branch_account account_type initial_balance active
-    }
-    deals(where: { archived: { _eq: false } }, order_by: { title: asc }) {
-      id title
-    }
-    companies(where: { archived: { _eq: false } }, order_by: { trade_name: asc }) {
-      id trade_name legal_name
-    }
-    contacts(where: { archived: { _eq: false } }, order_by: { full_name: asc }) {
-      id full_name
     }
   }
 `;
@@ -269,6 +261,19 @@ export const BANK_TRANSACTIONS_QUERY = gql`
       payable_id receivable_id transfer_group memo
       payable { id description }
       receivable { id description }
+    }
+  }
+`;
+
+/** Extrato consolidado para relatório timeline (todas as contas). */
+export const FIN_TIMELINE_BANK_TX_QUERY = gql`
+  query FinTimelineBankTx($from: date!, $to: date!) {
+    bank_transactions(
+      where: { archived: { _eq: false }, date: { _gte: $from, _lte: $to } }
+      order_by: { date: asc }
+    ) {
+      id date description amount kind bank_account_id transfer_group
+      bank_account { id name }
     }
   }
 `;

@@ -1,11 +1,10 @@
 import {
-  useEffect,
   useMemo,
   useState,
   type FormEvent,
   type ReactNode,
 } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Package, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../../../lib/graphql";
@@ -13,23 +12,20 @@ import { ProductForm } from "../ProductForm";
 import {
   ADD_DEAL_LINE_ITEM,
   DELETE_DEAL_LINE_ITEM,
-  PRODUCTS_MINI_DEAL_DETAIL,
   UPDATE_DEAL_DETAIL,
   UPDATE_DEAL_LINE_ITEM,
   type DealLineItemFull,
 } from "../../../lib/queries/deal-detail";
+import {
+  fetchProductOption,
+  searchProducts,
+  type SearchOption,
+} from "../../../lib/entity-search";
 import { formatCurrency } from "../../../lib/format";
 import { logActivity } from "../../../lib/activity-log";
 import { computeSubtotal } from "../labels";
+import { SearchSelect } from "../SearchSelect";
 import { Modal, SubmitButton, fieldInputClass } from "../ui";
-
-interface ProductMini {
-  id: string;
-  name: string;
-  sku: string | null;
-  base_price: string;
-  unit: string;
-}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -65,10 +61,13 @@ function CollapsibleHeader({
 
 export function LineItemsCard({
   dealId,
+  dealTotal,
   items,
   onChanged,
 }: {
   dealId: string;
+  /** Valor atual do negócio (para detectar valor definido manualmente). */
+  dealTotal: number;
   items: DealLineItemFull[];
   onChanged: () => void;
 }) {
@@ -81,6 +80,15 @@ export function LineItemsCard({
     () => round2(items.reduce((sum, it) => sum + Number(it.subtotal), 0)),
     [items]
   );
+
+  // Só sobrescreve o valor do negócio sem perguntar quando ele já era a
+  // soma dos itens. Um valor digitado à mão nunca é destruído em silêncio.
+  const totalIsDerived = Math.abs(dealTotal - total) < 0.01;
+  const confirmSync = (newTotal: number) =>
+    totalIsDerived ||
+    confirm(
+      `O valor do negócio (${formatCurrency(dealTotal)}) foi definido manualmente e difere da soma dos itens. Recalcular para ${formatCurrency(newTotal)}?`
+    );
 
   const syncTotal = (newTotal: number) =>
     gqlClient.request(UPDATE_DEAL_DETAIL, {
@@ -95,12 +103,15 @@ export function LineItemsCard({
 
   const deleteMutation = useMutation({
     mutationFn: async (item: DealLineItemFull) => {
-      await gqlClient.request(DELETE_DEAL_LINE_ITEM, { id: item.id });
       const newTotal = round2(total - Number(item.subtotal));
-      await syncTotal(newTotal);
+      const sync = confirmSync(newTotal);
+      await gqlClient.request(DELETE_DEAL_LINE_ITEM, { id: item.id });
+      if (sync) await syncTotal(newTotal);
       await logActivity({
         title: `Item removido: ${item.product?.name ?? "Produto"}`,
-        body: `Novo total do negócio: ${formatCurrency(newTotal)}`,
+        body: sync
+          ? `Novo total do negócio: ${formatCurrency(newTotal)}`
+          : undefined,
         link: { dealId },
       });
     },
@@ -123,6 +134,8 @@ export function LineItemsCard({
         vars.unit_price,
         vars.discount_percent
       );
+      const newTotal = round2(total - Number(vars.item.subtotal) + subtotal);
+      const sync = confirmSync(newTotal);
       await gqlClient.request(UPDATE_DEAL_LINE_ITEM, {
         id: vars.item.id,
         set: {
@@ -132,13 +145,12 @@ export function LineItemsCard({
           subtotal,
         },
       });
-      const newTotal = round2(total - Number(vars.item.subtotal) + subtotal);
-      await syncTotal(newTotal);
+      if (sync) await syncTotal(newTotal);
       await logActivity({
         title: `Item atualizado: ${vars.item.product?.name ?? "Produto"}`,
-        body: `${vars.quantity} × ${formatCurrency(
-          vars.unit_price
-        )} · Novo total: ${formatCurrency(newTotal)}`,
+        body: `${vars.quantity} × ${formatCurrency(vars.unit_price)}${
+          sync ? ` · Novo total: ${formatCurrency(newTotal)}` : ""
+        }`,
         link: { dealId },
       });
     },
@@ -252,6 +264,7 @@ export function LineItemsCard({
         <AddLineItemModal
           dealId={dealId}
           currentTotal={total}
+          dealTotal={dealTotal}
           onClose={() => setAdding(false)}
           onSaved={afterChange}
         />
@@ -348,68 +361,63 @@ function EditRow({
 function AddLineItemModal({
   dealId,
   currentTotal,
+  dealTotal,
   onClose,
   onSaved,
 }: {
   dealId: string;
+  /** Soma dos itens existentes. */
   currentTotal: number;
+  /** Valor atual do negócio (pode ter sido definido manualmente). */
+  dealTotal: number;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { data, refetch } = useQuery({
-    queryKey: ["products-mini-deal-detail"],
-    queryFn: () =>
-      gqlClient.request<{ products: ProductMini[] }>(
-        PRODUCTS_MINI_DEAL_DETAIL
-      ),
-  });
-  const products = data?.products ?? [];
-
-  const [productId, setProductId] = useState("");
+  const [product, setProduct] = useState<SearchOption | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [creatingProduct, setCreatingProduct] = useState(false);
-  const [pendingProductId, setPendingProductId] = useState<string | null>(null);
 
   const subtotal = computeSubtotal(quantity, unitPrice, discount);
 
-  // Após criar um produto na hora, seleciona-o assim que aparecer na lista
-  // (herdando nome/preço base no momento da criação do item de linha).
-  useEffect(() => {
-    if (!pendingProductId) return;
-    const p = products.find((x) => x.id === pendingProductId);
-    if (p) {
-      setProductId(p.id);
-      setUnitPrice(Number(p.base_price));
-      setPendingProductId(null);
-    }
-  }, [pendingProductId, products]);
+  const applyProduct = (opt: SearchOption | null) => {
+    setProduct(opt);
+    const price = opt?.meta?.base_price;
+    if (price != null) setUnitPrice(Number(price));
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const newTotal = round2(currentTotal + subtotal);
+      // Valor manual (diferente da soma dos itens) só é sobrescrito com aval.
+      const sync =
+        Math.abs(dealTotal - currentTotal) < 0.01 ||
+        confirm(
+          `O valor do negócio (${formatCurrency(dealTotal)}) foi definido manualmente e difere da soma dos itens. Recalcular para ${formatCurrency(newTotal)}?`
+        );
       await gqlClient.request(ADD_DEAL_LINE_ITEM, {
         obj: {
           deal_id: dealId,
-          product_id: productId,
+          product_id: product!.id,
           quantity,
           unit_price: unitPrice,
           discount_percent: discount,
           subtotal,
         },
       });
-      const newTotal = round2(currentTotal + subtotal);
-      await gqlClient.request(UPDATE_DEAL_DETAIL, {
-        id: dealId,
-        set: { total_value: newTotal },
-      });
-      const productName =
-        products.find((p) => p.id === productId)?.name ?? "Produto";
+      if (sync) {
+        await gqlClient.request(UPDATE_DEAL_DETAIL, {
+          id: dealId,
+          set: { total_value: newTotal },
+        });
+      }
+      const productName = product?.label ?? "Produto";
       await logActivity({
         title: `Item adicionado: ${productName}`,
-        body: `${quantity} × ${formatCurrency(
-          unitPrice
-        )} · Novo total: ${formatCurrency(newTotal)}`,
+        body: `${quantity} × ${formatCurrency(unitPrice)}${
+          sync ? ` · Novo total: ${formatCurrency(newTotal)}` : ""
+        }`,
         link: { dealId },
       });
     },
@@ -423,7 +431,7 @@ function AddLineItemModal({
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!productId) {
+    if (!product) {
       toast.error("Selecione um produto");
       return;
     }
@@ -432,12 +440,6 @@ function AddLineItemModal({
       return;
     }
     mutation.mutate();
-  };
-
-  const onSelectProduct = (id: string) => {
-    setProductId(id);
-    const p = products.find((x) => x.id === id);
-    if (p) setUnitPrice(Number(p.base_price));
   };
 
   return (
@@ -457,20 +459,14 @@ function AddLineItemModal({
               <Plus size={13} /> Criar produto
             </button>
           </div>
-          <select
-            value={productId}
-            onChange={(e) => onSelectProduct(e.target.value)}
-            className={fieldInputClass}
-            required
-          >
-            <option value="">Selecione...</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.sku ? ` (${p.sku})` : ""} — {formatCurrency(p.base_price)}
-              </option>
-            ))}
-          </select>
+          <SearchSelect
+            value={product}
+            onChange={applyProduct}
+            loadOptions={searchProducts}
+            placeholder="Buscar produto..."
+            searchPlaceholder="Nome ou SKU..."
+            allowClear={false}
+          />
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div>
@@ -529,7 +525,10 @@ function AddLineItemModal({
           onClose={() => setCreatingProduct(false)}
           onSaved={(newId) => {
             if (!newId) return;
-            refetch().then(() => setPendingProductId(newId));
+            // Seleciona o produto recém-criado (herdando o preço base).
+            fetchProductOption(newId).then((opt) => {
+              if (opt) applyProduct(opt);
+            });
           }}
         />
       )}

@@ -1,21 +1,25 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { gqlClient } from "../../lib/graphql";
 import {
-  COMPANIES_MINI,
   CREATE_DEAL,
   PIPELINES_WITH_STAGES,
   UPDATE_DEAL,
   USERS_LIST,
-  type CompanyRef,
   type Deal,
   type Pipeline,
   type Stage,
   type UserRef,
 } from "../../lib/queries/crm";
+import {
+  fetchCompanyOption,
+  searchCompanies,
+  type SearchOption,
+} from "../../lib/entity-search";
 import { useAuth } from "../../store/auth";
 import { logActivity } from "../../lib/activity-log";
+import { SearchSelect } from "./SearchSelect";
 import {
   Modal,
   SelectField,
@@ -46,10 +50,6 @@ export function DealForm({
         PIPELINES_WITH_STAGES
       ),
   });
-  const { data: companiesData } = useQuery({
-    queryKey: ["companies-mini"],
-    queryFn: () => gqlClient.request<{ companies: CompanyRef[] }>(COMPANIES_MINI),
-  });
   const { data: usersData } = useQuery({
     queryKey: ["users-mini"],
     queryFn: () => gqlClient.request<{ users: UserRef[] }>(USERS_LIST),
@@ -58,6 +58,25 @@ export function DealForm({
   const [pipelineId, setPipelineId] = useState(
     deal?.pipeline_id ?? ""
   );
+
+  // Empresa selecionada — busca no servidor; rótulo inicial via by_pk.
+  const [company, setCompany] = useState<SearchOption | null>(
+    deal?.company
+      ? {
+          id: deal.company.id,
+          label: deal.company.trade_name || deal.company.legal_name,
+        }
+      : null
+  );
+  useEffect(() => {
+    const cid = deal?.company_id ?? initialCompanyId;
+    if (!deal?.company && cid) {
+      fetchCompanyOption(cid).then((opt) => {
+        if (opt) setCompany(opt);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pipelines = pipeData?.pipelines ?? [];
   const effectivePipeline = pipelineId || pipelines[0]?.id || "";
@@ -157,15 +176,14 @@ export function DealForm({
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <SelectField
+          <SearchSelect
             name="company_id"
             label="Empresa"
-            defaultValue={deal?.company_id ?? initialCompanyId ?? ""}
-            placeholder="— sem empresa —"
-            options={(companiesData?.companies ?? []).map((c) => ({
-              value: c.id,
-              label: c.trade_name || c.legal_name,
-            }))}
+            value={company}
+            onChange={setCompany}
+            loadOptions={(q) => searchCompanies(q)}
+            placeholder="Sem empresa"
+            searchPlaceholder="Buscar empresa..."
           />
           <SelectField
             name="responsible_id"

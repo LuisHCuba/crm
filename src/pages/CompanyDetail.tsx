@@ -7,20 +7,15 @@ import { gqlClient } from "../lib/graphql";
 import {
   ARCHIVE_COMPANY,
   COMPANY_DETAIL,
-  CONTACTS_MINI,
   LINK_CONTACT_COMPANY,
   UNLINK_CONTACT_COMPANY,
   UPDATE_COMPANY,
   USERS_LIST,
   type Company,
-  type ContactRef,
   type UserRef,
 } from "../lib/queries/crm";
 import { UPDATE_DEAL_DETAIL } from "../lib/queries/deal-detail";
-import {
-  DEALS_MINI_DETAIL,
-  type DealMini,
-} from "../lib/queries/contact-detail";
+import { searchContacts, searchDeals } from "../lib/entity-search";
 import { logActivity, describeChanges } from "../lib/activity-log";
 import { COMPANY_FIELD_LABELS } from "../components/crm/field-labels";
 import { formatCurrency } from "../lib/format";
@@ -74,35 +69,37 @@ export default function CompanyDetail() {
     queryFn: () => gqlClient.request<{ users: UserRef[] }>(USERS_LIST),
   });
 
-  const { data: contactsData } = useQuery({
-    queryKey: ["contacts-mini"],
-    queryFn: () => gqlClient.request<{ contacts: ContactRef[] }>(CONTACTS_MINI),
-  });
-
-  const { data: dealsData } = useQuery({
-    queryKey: ["deals-mini-detail"],
-    queryFn: () => gqlClient.request<{ deals: DealMini[] }>(DEALS_MINI_DETAIL),
-  });
-
   const [addingContact, setAddingContact] = useState(false);
   const [addingDeal, setAddingDeal] = useState(false);
 
-  const invalidate = () =>
+  const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["company", id] });
+    // Nome/campos aparecem também na listagem de empresas.
+    queryClient.invalidateQueries({ queryKey: ["companies"] });
+  };
 
-  const contactName = (cid: string) =>
-    contactsData?.contacts.find((c) => c.id === cid)?.full_name ?? "contato";
-  const dealName = (did: string) =>
-    dealsData?.deals.find((d) => d.id === did)?.title ?? "negócio";
+  // Nome para logs de desvinculação: vem dos vínculos já carregados.
+  const linkedContactName = (cid: string) =>
+    data?.companies_by_pk?.contact_companies?.find(
+      (cc) => cc.contact.id === cid
+    )?.contact.full_name ?? "contato";
+  const linkedDealName = (did: string) =>
+    data?.companies_by_pk?.deals?.find((d) => d.id === did)?.title ?? "negócio";
 
   const linkContact = useMutation({
-    mutationFn: async (contact_id: string) => {
+    mutationFn: async ({
+      contact_id,
+      label,
+    }: {
+      contact_id: string;
+      label?: string;
+    }) => {
       await gqlClient.request(LINK_CONTACT_COMPANY, {
         contact_id,
         company_id: id,
       });
       await logActivity({
-        title: `Contato vinculado: ${contactName(contact_id)}`,
+        title: `Contato vinculado: ${label ?? "contato"}`,
         link: { companyId: id, contactId: contact_id },
       });
     },
@@ -120,7 +117,7 @@ export default function CompanyDetail() {
         company_id: id,
       });
       await logActivity({
-        title: `Contato desvinculado: ${contactName(contact_id)}`,
+        title: `Contato desvinculado: ${linkedContactName(contact_id)}`,
         link: { companyId: id, contactId: contact_id },
       });
     },
@@ -132,13 +129,19 @@ export default function CompanyDetail() {
   });
 
   const linkDeal = useMutation({
-    mutationFn: async (deal_id: string) => {
+    mutationFn: async ({
+      deal_id,
+      label,
+    }: {
+      deal_id: string;
+      label?: string;
+    }) => {
       await gqlClient.request(UPDATE_DEAL_DETAIL, {
         id: deal_id,
         set: { company_id: id },
       });
       await logActivity({
-        title: `Negócio vinculado: ${dealName(deal_id)}`,
+        title: `Negócio vinculado: ${label ?? "negócio"}`,
         link: { companyId: id, dealId: deal_id },
       });
     },
@@ -157,7 +160,7 @@ export default function CompanyDetail() {
         set: { company_id: null },
       });
       await logActivity({
-        title: `Negócio desvinculado: ${dealName(deal_id)}`,
+        title: `Negócio desvinculado: ${linkedDealName(deal_id)}`,
         link: { companyId: id, dealId: deal_id },
       });
     },
@@ -207,7 +210,7 @@ export default function CompanyDetail() {
       await logActivity({ title: "Empresa arquivada", link: { companyId: id } });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["companies-list"] });
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Empresa arquivada");
       navigate("/empresas");
@@ -230,16 +233,9 @@ export default function CompanyDetail() {
 
   const c = data.companies_by_pk;
 
-  const linkedContactIds = new Set(
-    c.contact_companies?.map((cc) => cc.contact.id) ?? []
-  );
-  const linkedDealIds = new Set(c.deals?.map((d) => d.id) ?? []);
-  const availableContacts = (contactsData?.contacts ?? []).filter(
-    (ct) => !linkedContactIds.has(ct.id)
-  );
-  const availableDeals = (dealsData?.deals ?? []).filter(
-    (d) => !linkedDealIds.has(d.id)
-  );
+  const linkedContactIds =
+    c.contact_companies?.map((cc) => cc.contact.id) ?? [];
+  const linkedDealIds = c.deals?.map((d) => d.id) ?? [];
 
   const addButton = (label: string, onClick: () => void) => (
     <button
@@ -337,18 +333,17 @@ export default function CompanyDetail() {
               <AddAssociationPanel
                 busy={busyContacts}
                 onClose={() => setAddingContact(false)}
-                options={availableContacts.map((ct) => ({
-                  id: ct.id,
-                  label: ct.full_name,
-                }))}
-                selectPlaceholder="Selecione um contato..."
-                onLinkExisting={(cid) => linkContact.mutate(cid)}
+                loadOptions={(q) => searchContacts(q, linkedContactIds)}
+                selectPlaceholder="Buscar contato..."
+                onLinkExisting={(cid, label) =>
+                  linkContact.mutate({ contact_id: cid, label })
+                }
                 createLabel="Criar contato"
                 renderForm={(onClose) => (
                   <ContactForm
                     onClose={onClose}
                     onSaved={(newId) => {
-                      if (newId) linkContact.mutate(newId);
+                      if (newId) linkContact.mutate({ contact_id: newId });
                     }}
                   />
                 )}
@@ -393,12 +388,11 @@ export default function CompanyDetail() {
               <AddAssociationPanel
                 busy={busyDeals}
                 onClose={() => setAddingDeal(false)}
-                options={availableDeals.map((d) => ({
-                  id: d.id,
-                  label: d.title,
-                }))}
-                selectPlaceholder="Selecione um negócio..."
-                onLinkExisting={(did) => linkDeal.mutate(did)}
+                loadOptions={(q) => searchDeals(q, linkedDealIds)}
+                selectPlaceholder="Buscar negócio..."
+                onLinkExisting={(did, label) =>
+                  linkDeal.mutate({ deal_id: did, label })
+                }
                 createLabel="Criar negócio"
                 renderForm={(onClose) => (
                   <DealForm

@@ -46,6 +46,14 @@ export interface DealLineItemFull {
   product?: { id: string; name: string; sku: string | null; unit: string } | null;
 }
 
+/** Proposta vinculada ao negócio (resumo para o card de associações). */
+export interface DealProposalMini {
+  id: string;
+  title: string;
+  password: string | null;
+  updated_at: string;
+}
+
 export interface DealActivity {
   id: string;
   type: ActivityType;
@@ -79,6 +87,7 @@ export interface DealDetailData {
   deal_contacts?: { contact: DealContactMini }[];
   line_items?: DealLineItemFull[];
   activities?: DealActivity[];
+  proposals?: DealProposalMini[];
 }
 
 /** Campos editáveis do negócio (usados na edição inline). */
@@ -153,6 +162,15 @@ export const DEAL_DETAIL_FULL = gql`
           sku
           unit
         }
+      }
+      proposals(
+        where: { archived: { _eq: false } }
+        order_by: { updated_at: desc }
+      ) {
+        id
+        title
+        password
+        updated_at
       }
       activities(order_by: { created_at: desc }) {
         id
@@ -230,6 +248,43 @@ export const UNLINK_DEAL_CONTACT_DETAIL = gql`
       where: { deal_id: { _eq: $deal_id }, contact_id: { _eq: $contact_id } }
     ) {
       affected_rows
+    }
+  }
+`;
+
+/** Vincula uma proposta existente a este negócio. */
+export const LINK_DEAL_PROPOSAL = gql`
+  mutation LinkDealProposal($proposal_id: uuid!, $deal_id: uuid!) {
+    update_proposals_by_pk(
+      pk_columns: { id: $proposal_id }
+      _set: { deal_id: $deal_id }
+    ) {
+      id
+    }
+  }
+`;
+
+/** Desvincula a proposta do negócio (mantém a proposta). */
+export const UNLINK_DEAL_PROPOSAL = gql`
+  mutation UnlinkDealProposal($proposal_id: uuid!) {
+    update_proposals_by_pk(
+      pk_columns: { id: $proposal_id }
+      _set: { deal_id: null }
+    ) {
+      id
+    }
+  }
+`;
+
+/** Propostas ativas ainda sem negócio (opções do painel de vínculo). */
+export const PROPOSALS_MINI_UNLINKED = gql`
+  query ProposalsMiniUnlinked {
+    proposals(
+      where: { archived: { _eq: false }, deal_id: { _is_null: true } }
+      order_by: { updated_at: desc }
+    ) {
+      id
+      title
     }
   }
 `;

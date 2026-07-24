@@ -7,6 +7,7 @@ import { Badge } from "../ui";
 import { AddAssociationPanel, CollapsibleCard } from "../associations-ui";
 import { CompanyForm } from "../CompanyForm";
 import { DealForm } from "../DealForm";
+import { searchCompanies, searchDeals } from "../../../lib/entity-search";
 import type {
   CompanyMini,
   ContactDetailData,
@@ -15,8 +16,6 @@ import type {
 
 export function Associations({
   contact,
-  availableCompanies,
-  availableDeals,
   onLinkCompany,
   onUnlinkCompany,
   onLinkDeal,
@@ -24,11 +23,9 @@ export function Associations({
   busy,
 }: {
   contact: ContactDetailData;
-  availableCompanies: CompanyMini[];
-  availableDeals: DealMini[];
-  onLinkCompany: (companyId: string) => void;
+  onLinkCompany: (companyId: string, label?: string) => void;
   onUnlinkCompany: (companyId: string) => void;
-  onLinkDeal: (dealId: string) => void;
+  onLinkDeal: (dealId: string, label?: string) => void;
   onUnlinkDeal: (dealId: string) => void;
   busy: boolean;
 }) {
@@ -49,8 +46,8 @@ export function Associations({
           <AddAssociationPanel
             busy={busy}
             onClose={() => setAddingDeal(false)}
-            options={availableDeals.map((d) => ({ id: d.id, label: d.title }))}
-            selectPlaceholder="Selecione um negócio..."
+            loadOptions={(q) => searchDeals(q, deals.map((d) => d.id))}
+            selectPlaceholder="Buscar negócio..."
             onLinkExisting={onLinkDeal}
             createLabel="Criar negócio"
             renderForm={(onClose) => (
@@ -113,11 +110,10 @@ export function Associations({
           <AddAssociationPanel
             busy={busy}
             onClose={() => setAddingCompany(false)}
-            options={availableCompanies.map((co) => ({
-              id: co.id,
-              label: co.trade_name || co.legal_name,
-            }))}
-            selectPlaceholder="Selecione uma empresa..."
+            loadOptions={(q) =>
+              searchCompanies(q, companies.map((co) => co.id))
+            }
+            selectPlaceholder="Buscar empresa..."
             onLinkExisting={onLinkCompany}
             createLabel="Criar empresa"
             renderForm={(onClose) => (

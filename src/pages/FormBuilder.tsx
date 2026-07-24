@@ -27,7 +27,6 @@ import {
   type FormStatus,
   type MapTo,
 } from "../lib/queries/forms";
-import { PageHeader } from "../components/PageHeader";
 import { ErrorState, Loading, fieldInputClass } from "../components/crm/ui";
 import { Conversation } from "../components/crm/form-builder/Conversation";
 import { GenerateFormAiModal } from "../components/crm/form-builder/GenerateFormAiModal";
@@ -396,6 +395,7 @@ export default function FormBuilder() {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<FormStatus>("draft");
   const [definition, setDefinition] = useState<FormDefinition | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState("");
   const [aiOpen, setAiOpen] = useState(false);
   const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
@@ -413,8 +413,31 @@ export default function FormBuilder() {
       setTitle(form.title);
       setStatus(form.status);
       setDefinition(form.definition);
+      setSavedSnapshot(
+        JSON.stringify({
+          title: form.title,
+          status: form.status,
+          definition: form.definition,
+        })
+      );
     }
   }, [data]);
+
+  // Alterações não salvas: compara o estado atual com o último salvo.
+  const dirty =
+    definition != null &&
+    savedSnapshot !== "" &&
+    JSON.stringify({ title, status, definition }) !== savedSnapshot;
+
+  // Aviso do navegador ao fechar/recarregar a aba com trabalho pendente.
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -425,6 +448,8 @@ export default function FormBuilder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["forms"] });
       queryClient.invalidateQueries({ queryKey: ["form", id] });
+      queryClient.invalidateQueries({ queryKey: ["form-detail", id] });
+      setSavedSnapshot(JSON.stringify({ title, status, definition }));
       toast.success("Formulário salvo");
     },
     onError: () => toast.error("Erro ao salvar formulário"),
@@ -448,16 +473,26 @@ export default function FormBuilder() {
     );
   }
 
-  if (error || !data?.forms_by_pk || !definition) {
+  if (error || (data && !data.forms_by_pk)) {
     return (
       <div className="p-8">
         <ErrorState label="Formulário não encontrado." />
         <Link
-          to="/formularios"
+          to={`/formularios/${id}`}
           className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600"
         >
           <ArrowLeft size={16} /> Voltar
         </Link>
+      </div>
+    );
+  }
+
+  // Dados chegaram mas o estado local ainda não hidratou (evita o "flash"
+  // de erro no commit entre a query resolver e o useEffect rodar).
+  if (!definition) {
+    return (
+      <div className="p-8">
+        <Loading />
       </div>
     );
   }
@@ -527,45 +562,43 @@ export default function FormBuilder() {
     setDefinition((d) => (d ? { ...d, theme: { ...d.theme, ...patch } } : d));
 
   return (
-    <div className="flex h-full flex-col">
-      <PageHeader
-        title="Editar formulário"
-        subtitle="Construa um fluxo conversacional estilo Typebot"
-        action={
-          <div className="flex items-center gap-2">
-            <Link
-              to="/formularios"
-              className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              <ArrowLeft size={16} /> Voltar
-            </Link>
-            <button
-              onClick={() => setAiOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
-            >
-              <Sparkles size={16} /> Gerar com IA
-            </button>
-            <button
-              onClick={copyLink}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              <LinkIcon size={16} /> Link público
-            </button>
-            <button
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
-            >
-              {saveMutation.isPending ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Save size={16} />
-              )}
-              Salvar
-            </button>
-          </div>
-        }
-      />
+    <div className="flex h-full min-h-[640px] flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6 py-3">
+        <div className="flex items-center gap-2">
+          {dirty && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              Não salvo
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setAiOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+          >
+            <Sparkles size={16} /> Gerar com IA
+          </button>
+          <button
+            onClick={copyLink}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            <LinkIcon size={16} /> Link
+          </button>
+          <button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {saveMutation.isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Save size={16} />
+            )}
+            Salvar
+          </button>
+        </div>
+      </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 lg:grid-cols-2">
         {/* EDITOR */}
@@ -744,7 +777,12 @@ export default function FormBuilder() {
           <div className="border-b border-slate-200 bg-white px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Pré-visualização ao vivo
           </div>
-          <Conversation definition={definition} enableAutoFocus={false} />
+          <Conversation
+            definition={definition}
+            enableAutoFocus={false}
+            showBrandFooter={false}
+            embedded
+          />
         </div>
       </div>
 

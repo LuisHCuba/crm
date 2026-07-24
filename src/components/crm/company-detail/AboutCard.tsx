@@ -122,6 +122,7 @@ export function CompanyAboutCard({
 
   const [draft, setDraft] = useState<Record<string, string>>({});
 
+  // Depende só de `editing`: refetch do registro não apaga o rascunho.
   useEffect(() => {
     if (editing) {
       const next: Record<string, string> = {};
@@ -129,7 +130,7 @@ export function CompanyAboutCard({
       setDraft(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, company]);
+  }, [editing]);
 
   const handleSave = () => {
     const changes: Partial<Record<CompanyEditableField, string | null>> = {};

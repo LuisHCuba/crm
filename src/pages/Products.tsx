@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Pencil, Search, Package } from "lucide-react";
+import { Plus, Archive, Pencil, Search, Package } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../lib/graphql";
 import {
@@ -11,7 +11,7 @@ import {
 import { formatCurrency } from "../lib/format";
 import { PageHeader } from "../components/PageHeader";
 import { ProductForm } from "../components/crm/ProductForm";
-import { Badge, EmptyState, ErrorState, Loading } from "../components/crm/ui";
+import { Badge, EmptyState, ErrorState, SkeletonRows } from "../components/crm/ui";
 
 export default function Products() {
   const queryClient = useQueryClient();
@@ -77,7 +77,11 @@ export default function Products() {
           />
         </div>
 
-        {isLoading && <Loading />}
+        {isLoading && (
+          <div className="rounded-xl border border-slate-200 bg-white">
+            <SkeletonRows />
+          </div>
+        )}
         {error && <ErrorState label="Erro ao carregar produtos." />}
 
         {data && filtered.length === 0 && (
@@ -147,12 +151,15 @@ export default function Products() {
                           <Pencil size={16} />
                         </button>
                         <button
-                          onClick={() => archiveMutation.mutate(p.id)}
+                          onClick={() => {
+                            if (confirm(`Arquivar o produto "${p.name}"?`))
+                              archiveMutation.mutate(p.id);
+                          }}
                           disabled={archiveMutation.isPending}
                           className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                           title="Arquivar"
                         >
-                          <Trash2 size={16} />
+                          <Archive size={16} />
                         </button>
                       </div>
                     </td>

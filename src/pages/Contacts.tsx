@@ -21,7 +21,7 @@ import {
   CONTACT_STAGE_STYLES,
   formatCount,
 } from "../components/crm/labels";
-import { Avatar, Badge, EmptyState, ErrorState } from "../components/crm/ui";
+import { Avatar, Badge, EmptyState, ErrorState, SkeletonRows } from "../components/crm/ui";
 import {
   FilterPill,
   Pagination,
@@ -282,7 +282,14 @@ export default function Contacts() {
           {selected.size > 0 && (
             <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
               <button
-                onClick={() => archiveBulk.mutate([...selected])}
+                onClick={() => {
+                  if (
+                    confirm(
+                      `Arquivar ${selected.size} contato${selected.size > 1 ? "s" : ""}?`
+                    )
+                  )
+                    archiveBulk.mutate([...selected]);
+                }}
                 disabled={archiveBulk.isPending}
                 className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
               >
@@ -320,8 +327,8 @@ export default function Contacts() {
           {error ? (
             <ErrorState label="Erro ao carregar contatos." />
           ) : isLoading ? (
-            <div className="flex items-center gap-2 py-10 text-slate-500">
-              <Loader2 className="animate-spin" size={18} /> Carregando...
+            <div className="rounded-xl border border-slate-200 bg-white">
+              <SkeletonRows rows={8} />
             </div>
           ) : rows.length === 0 ? (
             <EmptyState

@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { gql } from "graphql-request";
 import { gqlClient } from "../../lib/graphql";
 import {
   INSERT_PAYABLE,
@@ -14,10 +15,17 @@ import {
   type RefCategory,
   type RefCostCenter,
   type RefBankAccount,
-  type RefDeal,
-  type RefCompany,
-  type RefContact,
 } from "../../lib/queries/financeiro";
+import {
+  fetchCompanyOption,
+  fetchContactOption,
+  fetchDealOption,
+  searchCompanies,
+  searchContacts,
+  searchDeals,
+  type SearchOption,
+} from "../../lib/entity-search";
+import { SearchSelect } from "../crm/SearchSelect";
 import {
   num,
   round2,
@@ -33,13 +41,30 @@ import { Field, inputCls, Btn } from "./ui";
 
 type Kind = "payable" | "receivable";
 
+/*
+ * Parcelas em UM único request (uma transação no Hasura): ou todas as
+ * parcelas são criadas, ou nenhuma — sem estado parcial em caso de falha.
+ */
+const INSERT_PAYABLES_MANY = gql`
+  mutation InsertPayablesMany($objs: [payables_insert_input!]!) {
+    insert_payables(objects: $objs) {
+      affected_rows
+    }
+  }
+`;
+
+const INSERT_RECEIVABLES_MANY = gql`
+  mutation InsertReceivablesMany($objs: [receivables_insert_input!]!) {
+    insert_receivables(objects: $objs) {
+      affected_rows
+    }
+  }
+`;
+
 interface RefData {
   categories: RefCategory[];
   costCenters: RefCostCenter[];
   bankAccounts: RefBankAccount[];
-  deals: RefDeal[];
-  companies: RefCompany[];
-  contacts: RefContact[];
 }
 
 export function LancamentoForm({
@@ -86,9 +111,23 @@ export function LancamentoForm({
   const [categoryId, setCategoryId] = useState(editing?.category_id ?? "");
   const [bankAccountId, setBankAccountId] = useState(editing?.bank_account_id ?? "");
   const [costCenterId, setCostCenterId] = useState(editing?.cost_center_id ?? "");
-  const [companyId, setCompanyId] = useState(editing?.company_id ?? "");
-  const [dealId, setDealId] = useState(editing?.deal_id ?? "");
-  const [contactId, setContactId] = useState(editing?.contact_id ?? "");
+  // Empresa/negócio/contato: busca no servidor (escalável); rótulos
+  // iniciais hidratados por id ao editar.
+  const [company, setCompany] = useState<SearchOption | null>(null);
+  const [deal, setDeal] = useState<SearchOption | null>(null);
+  const [contact, setContact] = useState<SearchOption | null>(null);
+  useEffect(() => {
+    if (editing?.company_id)
+      fetchCompanyOption(editing.company_id).then((o) => o && setCompany(o));
+    if (editing?.deal_id)
+      fetchDealOption(editing.deal_id).then((o) => o && setDeal(o));
+    if (editing?.contact_id)
+      fetchContactOption(editing.contact_id).then((o) => o && setContact(o));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const companyId = company?.id ?? "";
+  const dealId = deal?.id ?? "";
+  const contactId = contact?.id ?? "";
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [parcels, setParcels] = useState(1);
   const [apport, setApport] = useState<ApportionmentInput[]>(
@@ -106,8 +145,6 @@ export function LancamentoForm({
     () => refData.categories.filter((c) => c.type === (isReceivable ? "revenue" : "expense")),
     [refData.categories, isReceivable]
   );
-
-  const companyName = (c: RefCompany) => c.trade_name || c.legal_name || "Empresa";
 
   async function handleSave() {
     if (!description.trim()) return toast.error("Informe a descrição.");
@@ -153,20 +190,22 @@ export function LancamentoForm({
         const group = crypto.randomUUID();
         const per = round2(totalValue / parcels);
         const baseDue = new Date(dueDate + "T00:00:00");
-        for (let i = 0; i < parcels; i++) {
+        const objs = Array.from({ length: parcels }, (_, i) => {
           const d = new Date(baseDue);
           d.setMonth(d.getMonth() + i);
-          const obj = {
+          return {
             ...base,
             value: i === parcels - 1 ? round2(totalValue - per * (parcels - 1)) : per,
             due_date: toISODate(d),
             parcel_group: group,
             parcel_label: `${i + 1}/${parcels}`,
           };
-          await gqlClient.request(isReceivable ? INSERT_RECEIVABLE : INSERT_PAYABLE, {
-            obj,
-          });
-        }
+        });
+        // Uma transação: todas as parcelas ou nenhuma.
+        await gqlClient.request(
+          isReceivable ? INSERT_RECEIVABLES_MANY : INSERT_PAYABLES_MANY,
+          { objs }
+        );
       } else {
         const obj = { ...base, value: totalValue, due_date: dueDate };
         const res = await gqlClient.request<Record<string, { id: string }>>(
@@ -359,46 +398,31 @@ export function LancamentoForm({
 
         <div className="grid grid-cols-3 gap-4">
           <Field label="Empresa">
-            <select
-              className={inputCls}
-              value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
-            >
-              <option value="">—</option>
-              {refData.companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {companyName(c)}
-                </option>
-              ))}
-            </select>
+            <SearchSelect
+              value={company}
+              onChange={setCompany}
+              loadOptions={(q) => searchCompanies(q)}
+              placeholder="—"
+              searchPlaceholder="Buscar empresa..."
+            />
           </Field>
-          <Field label="Negócio (deal)">
-            <select
-              className={inputCls}
-              value={dealId}
-              onChange={(e) => setDealId(e.target.value)}
-            >
-              <option value="">—</option>
-              {refData.deals.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.title}
-                </option>
-              ))}
-            </select>
+          <Field label="Negócio">
+            <SearchSelect
+              value={deal}
+              onChange={setDeal}
+              loadOptions={(q) => searchDeals(q)}
+              placeholder="—"
+              searchPlaceholder="Buscar negócio..."
+            />
           </Field>
           <Field label="Contato">
-            <select
-              className={inputCls}
-              value={contactId}
-              onChange={(e) => setContactId(e.target.value)}
-            >
-              <option value="">—</option>
-              {refData.contacts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.full_name}
-                </option>
-              ))}
-            </select>
+            <SearchSelect
+              value={contact}
+              onChange={setContact}
+              loadOptions={(q) => searchContacts(q)}
+              placeholder="—"
+              searchPlaceholder="Buscar contato..."
+            />
           </Field>
         </div>
 

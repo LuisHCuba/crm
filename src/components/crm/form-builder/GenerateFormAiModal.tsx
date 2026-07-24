@@ -7,6 +7,8 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import { ModalOverlay } from "../../chrome/OverlayPortal";
+import { OVERLAY_PANEL_MAX_H_CLASS } from "../../chrome/overlays";
 import {
   generateFormFromPrompt,
   FORM_AI_PROMPT_MAX_CHARS,
@@ -90,18 +92,17 @@ export function GenerateFormAiModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 py-8"
-      onMouseDown={(e) => {
+    <ModalOverlay
+      onBackdropMouseDown={(e) => {
         if (e.target === e.currentTarget && step !== "loading") onClose();
       }}
     >
       <div
-        className={`w-full rounded-2xl bg-white shadow-xl ${
+        className={`my-auto flex w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl ${
           step === "preview" ? "max-w-5xl" : "max-w-2xl"
-        }`}
+        } ${OVERLAY_PANEL_MAX_H_CLASS}`}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
           <div className="flex items-center gap-2">
             <Sparkles size={20} className="text-indigo-600" />
             <div>
@@ -126,7 +127,7 @@ export function GenerateFormAiModal({
           )}
         </div>
 
-        <div className="p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {step === "input" && (
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
@@ -276,7 +277,7 @@ export function GenerateFormAiModal({
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }
 

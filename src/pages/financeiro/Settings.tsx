@@ -86,12 +86,16 @@ export default function Settings() {
                 <div className="flex gap-1">
                   <button
                     onClick={() => setCatModal({ open: true, edit: c })}
+                    title="Editar"
+                    aria-label="Editar"
                     className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
                   >
                     <Pencil size={15} />
                   </button>
                   <button
                     onClick={() => archiveCat(c)}
+                    title="Arquivar"
+                    aria-label="Arquivar"
                     className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 size={15} />
@@ -129,12 +133,16 @@ export default function Settings() {
                 <div className="flex gap-1">
                   <button
                     onClick={() => setCcModal({ open: true, edit: c })}
+                    title="Editar"
+                    aria-label="Editar"
                     className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
                   >
                     <Pencil size={15} />
                   </button>
                   <button
                     onClick={() => archiveCc(c)}
+                    title="Arquivar"
+                    aria-label="Arquivar"
                     className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 size={15} />

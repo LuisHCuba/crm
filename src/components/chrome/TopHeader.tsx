@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Search,
-  ChevronDown,
-  UserRound,
-  UserCog,
-  LogOut,
-} from "lucide-react";
+import { ChevronDown, UserRound, UserCog, LogOut } from "lucide-react";
 import { useAuth } from "../../store/auth";
 import { useChrome } from "./uiStore";
+import { GlobalSearch } from "./GlobalSearch";
+import {
+  SHELL_HEADER_HEIGHT_CLASS,
+  shellHeaderBrandWidthClass,
+} from "./shellLayout";
 
 export function TopHeader() {
   const { user, logout } = useAuth();
@@ -17,7 +16,6 @@ export function TopHeader() {
   const isAdmin = user?.role === "admin";
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
 
   const initials = (user?.name || user?.email || "?")
     .split(" ")
@@ -42,31 +40,18 @@ export function TopHeader() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   return (
-    <header className="flex h-11 shrink-0 items-center bg-shell pr-3 text-slate-200">
+    <header className={`relative z-10 flex ${SHELL_HEADER_HEIGHT_CLASS} shrink-0 items-center overflow-visible border-b border-shell-line bg-shell pr-3 text-slate-200`}>
       <button
         type="button"
         onClick={() => navigate("/")}
         title="Página inicial"
-        className={`flex h-full shrink-0 items-center transition-colors hover:bg-white/5 ${
-          sidebarExpanded ? "w-[236px] gap-3 pl-5" : "w-16 justify-center"
-        }`}
+        className={`flex h-full shrink-0 items-center transition-colors hover:bg-white/5 ${shellHeaderBrandWidthClass(sidebarExpanded)}`}
       >
         <img
           src="/omnia.png"
           alt="Omn.ia"
-          className="h-9 w-9 shrink-0 rounded-md object-cover"
+          className="h-10 w-10 shrink-0 rounded-md object-cover"
         />
         {sidebarExpanded && (
           <span className="flex flex-col leading-none">
@@ -81,21 +66,7 @@ export function TopHeader() {
       </button>
 
       <div className="w-full max-w-2xl">
-        <div className="relative">
-          <Search
-            size={15}
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <input
-            ref={searchRef}
-            type="text"
-            placeholder="Encontrar ou perguntar"
-            className="h-7 w-full rounded-md border border-white/10 bg-white/10 pl-8 pr-16 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white/15 focus:ring-2 focus:ring-indigo-500/30"
-          />
-          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-slate-300 sm:flex">
-            Ctrl K
-          </kbd>
-        </div>
+        <GlobalSearch />
       </div>
 
       <div className="ml-auto flex items-center gap-0.5">
@@ -122,7 +93,7 @@ export function TopHeader() {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full z-40 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+            <div className="absolute right-0 top-full z-40 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg animate-[dropdown-in_.12s_ease-out]">
               <div className="border-b border-slate-100 px-4 py-3">
                 <p className="truncate text-sm font-semibold text-slate-900">
                   {user?.name ?? "Usuário"}

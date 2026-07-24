@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
-  Trash2,
+  Archive,
   Pencil,
   Search,
   ClipboardList,
@@ -22,7 +22,7 @@ import {
 } from "../lib/queries/forms";
 import { formatDate } from "../lib/format";
 import { PageHeader } from "../components/PageHeader";
-import { Badge, EmptyState, ErrorState, Loading } from "../components/crm/ui";
+import { Badge, EmptyState, ErrorState, SkeletonRows } from "../components/crm/ui";
 import { GenerateFormAiModal } from "../components/crm/form-builder/GenerateFormAiModal";
 import type { GeneratedForm } from "../lib/form-ai";
 
@@ -38,8 +38,20 @@ export default function Forms() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["forms"],
-    queryFn: () => gqlClient.request<{ forms: FormRow[] }>(FORMS_LIST),
+    queryFn: () =>
+      gqlClient.request<{
+        forms: FormRow[];
+        form_submissions: { form_id: string }[];
+      }>(FORMS_LIST),
   });
+
+  const submissionCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of data?.form_submissions ?? []) {
+      map.set(row.form_id, (map.get(row.form_id) ?? 0) + 1);
+    }
+    return map;
+  }, [data?.form_submissions]);
 
   const createMutation = useMutation({
     mutationFn: (payload?: { title: string; definition: GeneratedForm["definition"] }) =>
@@ -52,7 +64,7 @@ export default function Forms() {
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["forms"] });
-      navigate(`/formularios/${res.insert_forms_one.id}`);
+      navigate(`/formularios/${res.insert_forms_one.id}/editar`);
     },
     onError: () => toast.error("Erro ao criar formulário"),
   });
@@ -121,7 +133,11 @@ export default function Forms() {
           />
         </div>
 
-        {isLoading && <Loading />}
+        {isLoading && (
+          <div className="rounded-xl border border-slate-200 bg-white">
+            <SkeletonRows />
+          </div>
+        )}
         {error && <ErrorState label="Erro ao carregar formulários." />}
 
         {data && filtered.length === 0 && (
@@ -157,6 +173,7 @@ export default function Forms() {
                   <tr>
                     <th className="px-5 py-3">Título</th>
                     <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Respostas</th>
                     <th className="px-5 py-3">Atualizado em</th>
                     <th className="px-5 py-3"></th>
                   </tr>
@@ -178,6 +195,9 @@ export default function Forms() {
                             Rascunho
                           </Badge>
                         )}
+                      </td>
+                      <td className="px-5 py-3 text-slate-600">
+                        {submissionCounts.get(f.id) ?? 0}
                       </td>
                       <td className="px-5 py-3 text-slate-600">
                         {formatDate(f.updated_at)}
@@ -203,17 +223,20 @@ export default function Forms() {
                           <button
                             onClick={() => navigate(`/formularios/${f.id}`)}
                             className="rounded-md p-1.5 text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600"
-                            title="Editar"
+                            title="Abrir formulário"
                           >
                             <Pencil size={16} />
                           </button>
                           <button
-                            onClick={() => archiveMutation.mutate(f.id)}
+                            onClick={() => {
+                              if (confirm(`Arquivar o formulário "${f.title}"?`))
+                                archiveMutation.mutate(f.id);
+                            }}
                             disabled={archiveMutation.isPending}
                             className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                             title="Arquivar"
                           >
-                            <Trash2 size={16} />
+                            <Archive size={16} />
                           </button>
                         </div>
                       </td>

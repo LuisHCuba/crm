@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Loader2,
-  Plus,
-  Pencil,
-  Trash2,
-  CheckCircle2,
-  Search,
-  Inbox,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle2, Inbox, X } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../../lib/graphql";
 import {
@@ -21,14 +13,62 @@ import {
   type Receivable,
 } from "../../lib/queries/financeiro";
 import { formatCurrency, formatDate } from "../../lib/format";
-import { effectiveStatus, num, parseDate } from "../../lib/financeiro-utils";
+import { effectiveStatus, num, parseDate, toISODate } from "../../lib/financeiro-utils";
 import { logActivity } from "../../lib/activity-log";
 import { useFinReference } from "./hooks";
 import { LancamentoForm } from "./LancamentoForm";
 import { BaixaModal } from "./BaixaModal";
 import { StatusBadge, MetricCard, Btn, EmptyState, inputCls } from "./ui";
+import { SearchBox, FilterPill, ViewTabs } from "../crm/listview";
+import { ErrorState, SkeletonRows } from "../crm/ui";
 
 type Kind = "payable" | "receivable";
+
+/* ------------------------------------------------------------------ */
+/*  Presets de vencimento                                              */
+/* ------------------------------------------------------------------ */
+
+type DuePreset = "" | "month" | "lastMonth" | "next30" | "year" | "custom";
+
+const DUE_PRESETS: { value: DuePreset; label: string }[] = [
+  { value: "month", label: "Este mês" },
+  { value: "lastMonth", label: "Mês passado" },
+  { value: "next30", label: "Próximos 30 dias" },
+  { value: "year", label: "Este ano" },
+  { value: "custom", label: "Personalizado…" },
+];
+
+function presetRange(preset: DuePreset): { from: string; to: string } | null {
+  const now = new Date();
+  switch (preset) {
+    case "month":
+      return {
+        from: toISODate(new Date(now.getFullYear(), now.getMonth(), 1)),
+        to: toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+      };
+    case "lastMonth":
+      return {
+        from: toISODate(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+        to: toISODate(new Date(now.getFullYear(), now.getMonth(), 0)),
+      };
+    case "next30": {
+      const end = new Date(now);
+      end.setDate(end.getDate() + 30);
+      return { from: toISODate(now), to: toISODate(end) };
+    }
+    case "year":
+      return {
+        from: toISODate(new Date(now.getFullYear(), 0, 1)),
+        to: toISODate(new Date(now.getFullYear(), 11, 31)),
+      };
+    default:
+      return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Página de lançamentos (a pagar / a receber)                        */
+/* ------------------------------------------------------------------ */
 
 export function EntriesPage({ kind }: { kind: Kind }) {
   const isReceivable = kind === "receivable";
@@ -36,7 +76,7 @@ export function EntriesPage({ kind }: { kind: Kind }) {
   const ref = useFinReference();
   const queryKey = isReceivable ? "fin-receivables" : "fin-payables";
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch: refetchQuery } = useQuery({
     queryKey: [queryKey],
     queryFn: () =>
       gqlClient.request<{ payables?: Payable[]; receivables?: Receivable[] }>(
@@ -52,6 +92,7 @@ export function EntriesPage({ kind }: { kind: Kind }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [accountFilter, setAccountFilter] = useState("");
+  const [duePreset, setDuePreset] = useState<DuePreset>("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [search, setSearch] = useState("");
@@ -64,15 +105,37 @@ export function EntriesPage({ kind }: { kind: Kind }) {
   const [params] = useSearchParams();
   const focusId = params.get("focus");
 
+  // Intervalo efetivo de vencimento (preset ou personalizado).
+  const dueRange = useMemo(() => {
+    if (duePreset === "custom") return from || to ? { from, to } : null;
+    return presetRange(duePreset);
+  }, [duePreset, from, to]);
+
+  // Contagens por status (sobre TODOS os itens, para as abas).
+  const statusCounts = useMemo(() => {
+    const counts = { all: items.length, pending: 0, overdue: 0, paid: 0 };
+    for (const it of items) {
+      const eff = effectiveStatus(it.status, it.due_date);
+      if (eff === "pending") counts.pending++;
+      else if (eff === "overdue") counts.overdue++;
+      else if (eff === "paid") counts.paid++;
+    }
+    return counts;
+  }, [items]);
+
   const filtered = useMemo(() => {
     return items.filter((it) => {
       const eff = effectiveStatus(it.status, it.due_date);
       if (statusFilter !== "all" && eff !== statusFilter) return false;
       if (categoryFilter && it.category_id !== categoryFilter) return false;
       if (accountFilter && it.bank_account_id !== accountFilter) return false;
-      const due = parseDate(it.due_date);
-      if (from && due && due < new Date(from + "T00:00:00")) return false;
-      if (to && due && due > new Date(to + "T00:00:00")) return false;
+      if (dueRange) {
+        const due = parseDate(it.due_date);
+        if (dueRange.from && due && due < new Date(dueRange.from + "T00:00:00"))
+          return false;
+        if (dueRange.to && due && due > new Date(dueRange.to + "T23:59:59"))
+          return false;
+      }
       if (search) {
         const hay = `${it.description} ${
           isReceivable
@@ -83,7 +146,7 @@ export function EntriesPage({ kind }: { kind: Kind }) {
       }
       return true;
     });
-  }, [items, statusFilter, categoryFilter, accountFilter, from, to, search, isReceivable]);
+  }, [items, statusFilter, categoryFilter, accountFilter, dueRange, search, isReceivable]);
 
   const totals = useMemo(() => {
     let pending = 0,
@@ -102,6 +165,23 @@ export function EntriesPage({ kind }: { kind: Kind }) {
     }
     return { pending, overdue, paid, openTotal: pending + overdue };
   }, [filtered, isReceivable]);
+
+  const hasActiveFilters =
+    statusFilter !== "all" ||
+    !!categoryFilter ||
+    !!accountFilter ||
+    !!duePreset ||
+    !!search;
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setCategoryFilter("");
+    setAccountFilter("");
+    setDuePreset("");
+    setFrom("");
+    setTo("");
+    setSearch("");
+  };
 
   const refetch = () => {
     qc.invalidateQueries({ queryKey: [queryKey] });
@@ -138,17 +218,25 @@ export function EntriesPage({ kind }: { kind: Kind }) {
     }
   }
 
-  const accent = isReceivable ? "text-emerald-600" : "text-rose-600";
+  const openEdit = (it: Payable | Receivable) => {
+    setEditing(it);
+    setFormOpen(true);
+  };
+
+  const accent = isReceivable ? "text-emerald-700" : "text-rose-700";
+  const paidLabel = isReceivable ? "Recebido" : "Pago";
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-900">
             {isReceivable ? "Contas a receber" : "Contas a pagar"}
           </h2>
           <p className="text-sm text-slate-500">
-            {items.length} lançamentos · {filtered.length} no filtro atual
+            {filtered.length === items.length
+              ? `${items.length} lançamento(s)`
+              : `${filtered.length} de ${items.length} lançamento(s)`}
           </p>
         </div>
         <Btn
@@ -161,112 +249,140 @@ export function EntriesPage({ kind }: { kind: Kind }) {
         </Btn>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MetricCard
           label="Em aberto"
           value={formatCurrency(totals.openTotal)}
           accent="text-slate-900"
-          sub="A vencer + vencido"
+          sub="A vencer + vencido (no filtro atual)"
         />
         <MetricCard
           label="Vencido"
           value={formatCurrency(totals.overdue)}
           accent="text-red-600"
         />
-        <MetricCard
-          label={isReceivable ? "Recebido" : "Pago"}
-          value={formatCurrency(totals.paid)}
-          accent={accent}
-        />
+        <MetricCard label={paidLabel} value={formatCurrency(totals.paid)} accent={accent} />
       </div>
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        {/* Abas de status com contagem */}
+        <ViewTabs
+          tabs={[
+            { id: "all", label: "Todos", count: statusCounts.all },
+            { id: "pending", label: "A vencer", count: statusCounts.pending },
+            { id: "overdue", label: "Vencidos", count: statusCounts.overdue },
+            { id: "paid", label: paidLabel + "s", count: statusCounts.paid },
+          ]}
+          activeId={statusFilter}
+          onSelect={setStatusFilter}
+        />
+
+        {/* Filtros em uma linha */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-3">
+          <div className="w-full max-w-xs">
+            <SearchBox
+              value={search}
+              onChange={setSearch}
+              placeholder={
+                isReceivable ? "Buscar descrição ou pagador…" : "Buscar descrição ou fornecedor…"
+              }
+            />
+          </div>
+          <FilterPill
+            label="Categoria"
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            options={ref.categories
+              .filter((c) => c.type === (isReceivable ? "revenue" : "expense"))
+              .map((c) => ({ value: c.id, label: c.name }))}
           />
-          <input
-            className={inputCls + " pl-9"}
-            placeholder="Buscar descrição ou parte…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+          <FilterPill
+            label="Conta"
+            value={accountFilter}
+            onChange={setAccountFilter}
+            options={ref.bankAccounts.map((b) => ({ value: b.id, label: b.name }))}
           />
+          <FilterPill
+            label="Vencimento"
+            value={duePreset}
+            onChange={(v) => setDuePreset(v as DuePreset)}
+            options={DUE_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
+          />
+          {duePreset === "custom" && (
+            <>
+              <input
+                type="date"
+                aria-label="Vencimento de"
+                className={inputCls + " w-auto py-1.5"}
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
+              <span className="text-sm text-slate-400">até</span>
+              <input
+                type="date"
+                aria-label="Vencimento até"
+                className={inputCls + " w-auto py-1.5"}
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </>
+          )}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="ml-auto flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            >
+              <X size={14} /> Limpar filtros
+            </button>
+          )}
         </div>
-        <select
-          className={inputCls + " w-auto"}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">Todos os status</option>
-          <option value="pending">A vencer</option>
-          <option value="overdue">Vencido</option>
-          <option value="paid">{isReceivable ? "Recebido" : "Pago"}</option>
-          <option value="cancelled">Cancelado</option>
-        </select>
-        <select
-          className={inputCls + " w-auto"}
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-        >
-          <option value="">Todas categorias</option>
-          {ref.categories
-            .filter((c) => c.type === (isReceivable ? "revenue" : "expense"))
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-        </select>
-        <select
-          className={inputCls + " w-auto"}
-          value={accountFilter}
-          onChange={(e) => setAccountFilter(e.target.value)}
-        >
-          <option value="">Todas as contas</option>
-          {ref.bankAccounts.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="date"
-          className={inputCls + " w-auto"}
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          title="Vencimento de"
-        />
-        <input
-          type="date"
-          className={inputCls + " w-auto"}
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          title="Vencimento até"
-        />
-      </div>
 
-      {isLoading && (
-        <div className="flex items-center gap-2 text-slate-500">
-          <Loader2 className="animate-spin" size={18} /> Carregando…
-        </div>
-      )}
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          Erro ao carregar lançamentos.
-        </div>
-      )}
+        {isLoading && <SkeletonRows rows={8} />}
+        {error && (
+          <div className="p-4">
+            <ErrorState
+              label="Não foi possível carregar os lançamentos."
+              onRetry={() => refetchQuery()}
+            />
+          </div>
+        )}
 
-      {data && filtered.length === 0 && (
-        <EmptyState
-          icon={Inbox}
-          title="Nenhum lançamento encontrado"
-          description="Ajuste os filtros ou crie um novo lançamento."
-        />
-      )}
+        {data && filtered.length === 0 && (
+          <div className="p-6">
+            <EmptyState
+              icon={Inbox}
+              title={
+                hasActiveFilters
+                  ? "Nenhum lançamento com estes filtros"
+                  : "Nenhum lançamento ainda"
+              }
+              description={
+                hasActiveFilters
+                  ? "Ajuste ou limpe os filtros para ver mais resultados."
+                  : "Crie o primeiro lançamento para começar o controle."
+              }
+              action={
+                hasActiveFilters ? (
+                  <Btn variant="secondary" onClick={clearFilters}>
+                    Limpar filtros
+                  </Btn>
+                ) : (
+                  <Btn
+                    onClick={() => {
+                      setEditing(null);
+                      setFormOpen(true);
+                    }}
+                  >
+                    <Plus size={16} /> Novo lançamento
+                  </Btn>
+                )
+              }
+            />
+          </div>
+        )}
 
-      {data && filtered.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        {data && filtered.length > 0 && (
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
@@ -290,7 +406,8 @@ export function EntriesPage({ kind }: { kind: Kind }) {
                   <tr
                     key={it.id}
                     id={`fin-entry-${it.id}`}
-                    className={`hover:bg-slate-50 ${
+                    onClick={() => openEdit(it)}
+                    className={`cursor-pointer hover:bg-slate-50 ${
                       focusId === it.id
                         ? "bg-indigo-50/60 ring-2 ring-inset ring-indigo-400"
                         : ""
@@ -311,29 +428,33 @@ export function EntriesPage({ kind }: { kind: Kind }) {
                     <td className="px-5 py-3 text-slate-600">{it.category?.name || "—"}</td>
                     <td className="px-5 py-3 text-slate-600">{it.bank_account?.name || "—"}</td>
                     <td className="px-5 py-3 text-slate-600">{formatDate(it.due_date)}</td>
-                    <td className="px-5 py-3 text-right font-semibold text-slate-900">
+                    <td
+                      className="px-5 py-3 text-right font-semibold text-slate-900"
+                      style={{ fontVariantNumeric: "tabular-nums" }}
+                    >
                       {formatCurrency(it.value)}
                     </td>
                     <td className="px-5 py-3">
                       <StatusBadge status={it.status} dueDate={it.due_date} />
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {eff !== "paid" && eff !== "cancelled" && (
                           <button
                             onClick={() => setBaixa(it)}
-                            title={isReceivable ? "Receber" : "Pagar"}
+                            title={isReceivable ? "Registrar recebimento" : "Registrar pagamento"}
+                            aria-label={
+                              isReceivable ? "Registrar recebimento" : "Registrar pagamento"
+                            }
                             className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50"
                           >
                             <CheckCircle2 size={16} />
                           </button>
                         )}
                         <button
-                          onClick={() => {
-                            setEditing(it);
-                            setFormOpen(true);
-                          }}
+                          onClick={() => openEdit(it)}
                           title="Editar"
+                          aria-label="Editar"
                           className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
                         >
                           <Pencil size={16} />
@@ -341,6 +462,7 @@ export function EntriesPage({ kind }: { kind: Kind }) {
                         <button
                           onClick={() => handleArchive(it)}
                           title="Excluir"
+                          aria-label="Excluir"
                           className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 size={16} />
@@ -352,8 +474,8 @@ export function EntriesPage({ kind }: { kind: Kind }) {
               })}
             </tbody>
           </table>
-        </div>
-      )}
+        )}
+      </div>
 
       {formOpen && (
         <LancamentoForm

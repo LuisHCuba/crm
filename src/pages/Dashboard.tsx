@@ -5,12 +5,12 @@ import {
   CheckCircle2,
   Clock,
   TrendingUp,
-  Loader2,
 } from "lucide-react";
 import { gqlClient } from "../lib/graphql";
 import { DASHBOARD_QUERY } from "../lib/queries";
 import { formatCurrency } from "../lib/format";
 import { PageHeader } from "../components/PageHeader";
+import { ErrorState, Skeleton } from "../components/crm/ui";
 
 interface DashboardData {
   contacts_aggregate: { aggregate: { count: number } };
@@ -21,7 +21,7 @@ interface DashboardData {
 }
 
 export default function Dashboard() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => gqlClient.request<DashboardData>(DASHBOARD_QUERY),
   });
@@ -31,14 +31,27 @@ export default function Dashboard() {
       <PageHeader title="Dashboard" subtitle="Visão geral do CRM" />
       <div className="p-8">
         {isLoading && (
-          <div className="flex items-center gap-2 text-slate-500">
-            <Loader2 className="animate-spin" size={18} /> Carregando dados...
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-slate-200 bg-white p-5"
+              >
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-9 w-9 rounded-lg" />
+                </div>
+                <Skeleton className="mt-4 h-8 w-16" />
+                <Skeleton className="mt-2 h-4 w-28" />
+              </div>
+            ))}
           </div>
         )}
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-            Erro ao carregar dados do Hasura.
-          </div>
+          <ErrorState
+            label="Não foi possível carregar o painel. Verifique sua conexão."
+            onRetry={() => refetch()}
+          />
         )}
         {data && (
           <>
@@ -179,7 +192,10 @@ function ProgressRow({
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${color}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );

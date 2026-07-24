@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Link2, Plus } from "lucide-react";
-import { fieldInputClass } from "./ui";
+import { SearchSelect } from "./SearchSelect";
+import type { SearchOption } from "../../lib/entity-search";
 
 /**
  * Card recolhível usado nas colunas de associação das record pages
@@ -55,13 +56,14 @@ export function CollapsibleCard({
 
 /**
  * Painel de associação estilo HubSpot: oferece duas opções ao adicionar —
- * "Vincular existente" (select com registros já existentes) e "Criar novo"
- * (abre o form de criação do objeto). Ao criar, o registro é vinculado
- * automaticamente ao registro atual (o vínculo é responsabilidade de
- * `renderForm`, que recebe `onClose` e deve disparar o link no `onSaved`).
+ * "Vincular existente" (busca no servidor, escalável para milhares de
+ * registros) e "Criar novo" (abre o form de criação do objeto). Ao criar,
+ * o registro é vinculado automaticamente ao registro atual (o vínculo é
+ * responsabilidade de `renderForm`, que recebe `onClose` e deve disparar
+ * o link no `onSaved`).
  */
 export function AddAssociationPanel({
-  options,
+  loadOptions,
   selectPlaceholder,
   onLinkExisting,
   createLabel,
@@ -69,11 +71,11 @@ export function AddAssociationPanel({
   busy,
   onClose,
 }: {
-  /** Registros já existentes disponíveis para vínculo. */
-  options: { id: string; label: string }[];
+  /** Busca registros no servidor (query vazia = mais recentes). */
+  loadOptions: (q: string) => Promise<SearchOption[]>;
   selectPlaceholder: string;
-  /** Vincula um registro já existente ao registro atual. */
-  onLinkExisting: (id: string) => void;
+  /** Vincula um registro já existente; recebe id e rótulo (p/ logs). */
+  onLinkExisting: (id: string, label: string) => void;
   /** Rótulo do botão de criação (ex.: "Criar empresa"). */
   createLabel: string;
   /** Renderiza o form de criação; `onClose` fecha o painel inteiro. */
@@ -109,25 +111,19 @@ export function AddAssociationPanel({
       )}
 
       {mode === "existing" && (
-        <select
-          className={fieldInputClass}
-          defaultValue=""
+        <SearchSelect
+          value={null}
+          defaultOpen
           disabled={busy}
-          autoFocus
-          onChange={(e) => {
-            if (e.target.value) {
-              onLinkExisting(e.target.value);
+          placeholder={selectPlaceholder}
+          loadOptions={loadOptions}
+          onChange={(opt) => {
+            if (opt) {
+              onLinkExisting(opt.id, opt.label);
               onClose();
             }
           }}
-        >
-          <option value="">{selectPlaceholder}</option>
-          {options.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        />
       )}
 
       {creating &&

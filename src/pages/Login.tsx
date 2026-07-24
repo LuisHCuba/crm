@@ -21,7 +21,7 @@ interface LoginResult {
 export default function Login() {
   const navigate = useNavigate();
   const setUser = useAuth((s) => s.setUser);
-  const [email, setEmail] = useState("adm@lhcx.tech");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

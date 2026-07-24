@@ -5,27 +5,23 @@ import {
   type RefCategory,
   type RefCostCenter,
   type RefBankAccount,
-  type RefDeal,
-  type RefCompany,
-  type RefContact,
 } from "../../lib/queries/financeiro";
 
+/*
+ * Apenas tabelas de configuração (pequenas por natureza). Empresas,
+ * negócios e contatos NÃO são carregados aqui — os seletores usam busca
+ * no servidor via SearchSelect (lib/entity-search.ts), que escala.
+ */
 export interface FinReference {
   categories: RefCategory[];
   costCenters: RefCostCenter[];
   bankAccounts: RefBankAccount[];
-  deals: RefDeal[];
-  companies: RefCompany[];
-  contacts: RefContact[];
 }
 
 const EMPTY: FinReference = {
   categories: [],
   costCenters: [],
   bankAccounts: [],
-  deals: [],
-  companies: [],
-  contacts: [],
 };
 
 export function useFinReference() {
@@ -36,9 +32,6 @@ export function useFinReference() {
         financial_categories: RefCategory[];
         cost_centers: RefCostCenter[];
         bank_accounts: RefBankAccount[];
-        deals: RefDeal[];
-        companies: RefCompany[];
-        contacts: RefContact[];
       }>(FIN_REFERENCE_QUERY),
     staleTime: 60_000,
   });
@@ -48,9 +41,6 @@ export function useFinReference() {
         categories: data.financial_categories,
         costCenters: data.cost_centers,
         bankAccounts: data.bank_accounts,
-        deals: data.deals,
-        companies: data.companies,
-        contacts: data.contacts,
       }
     : EMPTY;
 

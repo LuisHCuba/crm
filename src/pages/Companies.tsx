@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Mail, Phone, Search, Building2 } from "lucide-react";
+import { Plus, Archive, Mail, Phone, Search, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { gqlClient } from "../lib/graphql";
 import {
@@ -12,7 +12,7 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import { CompanyForm } from "../components/crm/CompanyForm";
 import { COMPANY_TYPE_LABELS, COMPANY_TYPE_STYLES } from "../components/crm/labels";
-import { Badge, EmptyState, ErrorState, Loading } from "../components/crm/ui";
+import { Badge, EmptyState, ErrorState, SkeletonRows } from "../components/crm/ui";
 
 type CompanyRow = Company & {
   contact_companies_aggregate?: { aggregate: { count: number } };
@@ -80,7 +80,11 @@ export default function Companies() {
           />
         </div>
 
-        {isLoading && <Loading />}
+        {isLoading && (
+          <div className="rounded-xl border border-slate-200 bg-white">
+            <SkeletonRows />
+          </div>
+        )}
         {error && <ErrorState label="Erro ao carregar empresas." />}
 
         {data && filtered.length === 0 && (
@@ -160,12 +164,16 @@ export default function Companies() {
                     </td>
                     <td className="px-5 py-3 text-right">
                       <button
-                        onClick={() => archiveMutation.mutate(c.id)}
+                        onClick={() => {
+                          const name = c.trade_name || c.legal_name;
+                          if (confirm(`Arquivar a empresa "${name}"?`))
+                            archiveMutation.mutate(c.id);
+                        }}
                         disabled={archiveMutation.isPending}
                         className="rounded-md p-1.5 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:bg-red-50 hover:text-red-600"
                         title="Arquivar"
                       >
-                        <Trash2 size={16} />
+                        <Archive size={16} />
                       </button>
                     </td>
                   </tr>
